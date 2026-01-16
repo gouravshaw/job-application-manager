@@ -2,6 +2,7 @@ export interface StatusHistoryEntry {
   status: string;
   date: string;
   notes?: string;
+  stage?: string;
 }
 
 export interface JobApplication {
@@ -60,6 +61,7 @@ export interface JobApplicationCreate {
   interview_notes?: string;
   interview_questions?: string;
   interview_date?: string;
+  status_stage?: string;
 }
 
 export interface ApplicationStats {
@@ -68,6 +70,7 @@ export interface ApplicationStats {
   by_domain: { [key: string]: number };
   by_work_type: { [key: string]: number };
   recent_applications: number;
+  rejections_by_stage: { [key: string]: number };
 }
 
 export const STATUS_OPTIONS = [
@@ -104,6 +107,18 @@ export const APPLIED_ON_OPTIONS = [
   "Other"
 ];
 
+export const REJECTION_STAGE_OPTIONS = [
+  "CV / Resume Screening",
+  "ATS / Keyword Filtering",
+  "Recruiter Review",
+  "Phone Screen",
+  "Technical Interview",
+  "Hiring Manager Interview",
+  "Final Interview",
+  "Offer / Negotiation",
+  "Other"
+];
+
 export const SORT_OPTIONS = [
   { value: "created_at", label: "Date Added" },
   { value: "application_date", label: "Application Date" },
@@ -122,5 +137,6 @@ export interface FilterState {
   includeArchived: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  rejectionStage?: string;
 }
 

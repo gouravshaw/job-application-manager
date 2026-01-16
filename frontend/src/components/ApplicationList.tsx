@@ -31,6 +31,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       includeArchived: false,
       sortBy: 'created_at',
       sortOrder: 'desc',
+      rejectionStage: '',
     };
 
     if (initialFilter) {
@@ -78,6 +79,35 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
     }
   }, [initialFilter]);
 
+  const getLatestRejectionStage = (app: JobApplication): string | undefined => {
+    if (!app.status_history) return undefined;
+
+    const normalizeHistory = (history: any): any[] => {
+      let h = history;
+      for (let i = 0; i < 2; i++) {
+        if (typeof h === 'string') {
+          try {
+            h = JSON.parse(h);
+          } catch {
+            break;
+          }
+        }
+      }
+      if (Array.isArray(h)) return h;
+      if (h && typeof h === 'object' && (h as any).status) return [h];
+      return [];
+    };
+
+    const historyArray = normalizeHistory(app.status_history);
+
+    for (const entry of [...historyArray].reverse()) {
+      if (entry.status === 'Rejected') {
+        return entry.stage || 'Not specified';
+      }
+    }
+    return undefined;
+  };
+
   // Load applications whenever filters change or on mount
   useEffect(() => {
     loadApplications();
@@ -115,7 +145,15 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           sort_by: filters.sortBy,
           sort_order: filters.sortOrder,
         });
-        const filtered = allData.filter(app => app.status !== 'Saved' && app.status !== 'To Apply');
+        const filtered = allData
+          .filter(app => app.status !== 'Saved' && app.status !== 'To Apply')
+          .filter(app => {
+            if (filters.rejectionStage) {
+              const stage = getLatestRejectionStage(app);
+              return stage === filters.rejectionStage;
+            }
+            return true;
+          });
         setApplications(filtered);
         return;
       }
@@ -132,7 +170,15 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           sort_order: filters.sortOrder,
         });
         const statuses = filters.status.split(',').map(s => s.trim());
-        const filtered = allData.filter(app => statuses.includes(app.status));
+        const filtered = allData
+          .filter(app => statuses.includes(app.status))
+          .filter(app => {
+            if (filters.rejectionStage) {
+              const stage = getLatestRejectionStage(app);
+              return stage === filters.rejectionStage;
+            }
+            return true;
+          });
         setApplications(filtered);
         return;
       }
@@ -141,6 +187,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       const data = await applicationApi.getAll({
         search: filters.search || undefined,
         status: filters.status || undefined,
+        status_stage: filters.rejectionStage || undefined,
         domain: filters.domain || undefined,
         work_type: filters.workType || undefined,
         tags: filters.tags.length > 0 ? filters.tags.join(',') : undefined,
@@ -148,7 +195,14 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
         sort_by: filters.sortBy,
         sort_order: filters.sortOrder,
       });
-      setApplications(data);
+      const filtered = data.filter(app => {
+        if (filters.rejectionStage) {
+          const stage = getLatestRejectionStage(app);
+          return stage === filters.rejectionStage;
+        }
+        return true;
+      });
+      setApplications(filtered);
     } catch (error) {
       console.error('Error loading applications:', error);
     } finally {
@@ -241,6 +295,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
                     includeArchived: false,
                     sortBy: 'created_at',
                     sortOrder: 'desc',
+                    rejectionStage: '',
                   });
                 }}
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"

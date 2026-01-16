@@ -6,6 +6,7 @@ class StatusChange(BaseModel):
     status: str
     date: datetime
     notes: Optional[str] = None
+    stage: Optional[str] = None
 
 class JobApplicationBase(BaseModel):
     company_name: str
@@ -32,7 +33,7 @@ class JobApplicationBase(BaseModel):
     interview_date: Optional[datetime] = None
 
 class JobApplicationCreate(JobApplicationBase):
-    pass
+    status_stage: Optional[str] = None
 
 class JobApplicationUpdate(BaseModel):
     company_name: Optional[str] = None
@@ -46,6 +47,7 @@ class JobApplicationUpdate(BaseModel):
     status: Optional[str] = None
     status_date: Optional[datetime] = None  # Date for the status change
     status_notes: Optional[str] = None  # Notes for the status change
+    status_stage: Optional[str] = None  # Stage at which this status was recorded (especially for rejections)
     application_date: Optional[datetime] = None
     application_deadline: Optional[datetime] = None
     applied_on: Optional[str] = None
@@ -80,4 +82,5 @@ class ApplicationStats(BaseModel):
     by_domain: dict
     by_work_type: dict
     recent_applications: int
+    rejections_by_stage: Dict[str, int]
 

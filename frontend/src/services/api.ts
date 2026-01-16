@@ -11,6 +11,7 @@ export const applicationApi = {
   // Get all applications with advanced filtering
   getAll: async (filters?: {
     status?: string;
+    status_stage?: string;
     domain?: string;
     search?: string;
     work_type?: string;
@@ -22,6 +23,7 @@ export const applicationApi = {
     const params: any = {};
     if (filters) {
       if (filters.status) params.status = filters.status;
+      if (filters.status_stage) params.status_stage = filters.status_stage;
       if (filters.domain) params.domain = filters.domain;
       if (filters.search) params.search = filters.search;
       if (filters.work_type) params.work_type = filters.work_type;
@@ -137,8 +139,12 @@ export const applicationApi = {
     await api.post('/applications/bulk/unarchive', ids);
   },
 
-  bulkUpdateStatus: async (ids: number[], status: string): Promise<void> => {
-    await api.post(`/applications/bulk/update-status?status=${status}`, ids);
+  bulkUpdateStatus: async (ids: number[], status: string, stage?: string): Promise<void> => {
+    const params = new URLSearchParams({ status });
+    if (stage) {
+      params.append('stage', stage);
+    }
+    await api.post(`/applications/bulk/update-status?${params.toString()}`, ids);
   },
 };
 

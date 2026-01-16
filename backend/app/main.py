@@ -69,12 +69,14 @@ def read_applications(
     include_archived: bool = False,
     sort_by: Optional[str] = "created_at",
     sort_order: Optional[str] = "desc",
+    status_stage: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     applications = crud.get_applications(
         db, skip=skip, limit=limit, status=status, domain=domain,
         search=search, work_type=work_type, tags=tags,
-        include_archived=include_archived, sort_by=sort_by, sort_order=sort_order
+        include_archived=include_archived, sort_by=sort_by, sort_order=sort_order,
+        status_stage=status_stage
     )
     return applications
 
@@ -135,8 +137,8 @@ def bulk_unarchive_applications(application_ids: List[int], db: Session = Depend
     return {"message": f"Unarchived {count} applications successfully"}
 
 @app.post("/applications/bulk/update-status")
-def bulk_update_status(application_ids: List[int], status: str, db: Session = Depends(get_db)):
-    count = crud.bulk_update_status(db, application_ids=application_ids, status=status)
+def bulk_update_status(application_ids: List[int], status: str, stage: Optional[str] = None, db: Session = Depends(get_db)):
+    count = crud.bulk_update_status(db, application_ids=application_ids, status=status, stage=stage)
     return {"message": f"Updated status for {count} applications successfully"}
 
 # Get all unique tags

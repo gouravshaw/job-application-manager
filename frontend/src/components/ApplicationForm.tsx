@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS } from '../types';
+import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
 import { FaTimes } from 'react-icons/fa';
 import { TagsInput } from './TagsInput';
@@ -43,6 +43,20 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   useEffect(() => {
     loadTags();
   }, []);
+
+  useEffect(() => {
+    setFormData(prev => {
+      if (prev.status === 'Rejected' && !prev.status_stage) {
+        return { ...prev, status_stage: REJECTION_STAGE_OPTIONS[0] };
+      }
+      if (prev.status !== 'Rejected' && prev.status_stage) {
+        const updated = { ...prev };
+        delete updated.status_stage;
+        return updated;
+      }
+      return prev;
+    });
+  }, [formData.status]);
 
   const loadTags = async () => {
     try {
@@ -137,6 +151,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       if (formData.interview_notes) cleanedData.interview_notes = formData.interview_notes;
       if (formData.interview_questions) cleanedData.interview_questions = formData.interview_questions;
       if (formData.interview_date) cleanedData.interview_date = formData.interview_date;
+      if (formData.status === 'Rejected' && formData.status_stage) cleanedData.status_stage = formData.status_stage;
 
       // Create application
       if (isEdit && initialData) {
@@ -315,6 +330,21 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 ))}
               </select>
             </div>
+            {formData.status === 'Rejected' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stage Rejected At</label>
+                <select
+                  name="status_stage"
+                  value={formData.status_stage || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                >
+                  {REJECTION_STAGE_OPTIONS.map(stage => (
+                    <option key={stage} value={stage}>{stage}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Salary Range */}

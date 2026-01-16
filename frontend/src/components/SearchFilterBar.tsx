@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaTimes, FaFilter, FaSort, FaArchive } from 'react-icons/fa';
-import { FilterState, STATUS_OPTIONS, WORK_TYPE_OPTIONS, SORT_OPTIONS } from '../types';
+import { FilterState, STATUS_OPTIONS, WORK_TYPE_OPTIONS, SORT_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
 
 interface SearchFilterBarProps {
   filters: FilterState;
@@ -44,12 +44,13 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
       includeArchived: false,
       sortBy: 'created_at',
       sortOrder: 'desc',
+      rejectionStage: '',
     });
     setShowAdvanced(false);
   };
 
   const hasActiveFilters = filters.search || filters.status || filters.domain || 
-    filters.workType || filters.tags.length > 0 || filters.includeArchived;
+    filters.workType || filters.tags.length > 0 || filters.includeArchived || filters.rejectionStage;
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 mb-6 space-y-4 border border-gray-100 dark:border-slate-700">
@@ -149,6 +150,21 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Rejection Stage</label>
+            <select
+              value={filters.rejectionStage || ''}
+              onChange={(e) => handleFilterChange('rejectionStage', e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+            >
+              <option value="">All Stages</option>
+              {REJECTION_STAGE_OPTIONS.concat(["Not specified"]).map(stage => (
+                <option key={stage} value={stage}>{stage}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applies when status is Rejected.</p>
           </div>
 
           <div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FaTrash, FaArchive, FaCheckCircle, FaTimes } from 'react-icons/fa';
-import { STATUS_OPTIONS } from '../types';
+import { STATUS_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
 
 interface BulkActionsBarProps {
@@ -50,9 +50,29 @@ export const BulkActionsBar = ({ selectedIds, onClear, onSuccess }: BulkActionsB
   };
 
   const handleBulkStatusUpdate = async (status: string) => {
+    let stage: string | undefined;
+    if (status === 'Rejected') {
+      const optionsText = REJECTION_STAGE_OPTIONS.map((option, index) => `${index + 1}. ${option}`).join('\n');
+      const input = window.prompt(
+        `Rejected at which stage?\n${optionsText}\nEnter the number or type the stage name. Leave blank to use the previous status automatically.`,
+        '1'
+      );
+      if (input === null) {
+        return;
+      }
+      const trimmed = input.trim();
+      if (trimmed !== '') {
+        const asNumber = parseInt(trimmed, 10);
+        if (!isNaN(asNumber) && asNumber >= 1 && asNumber <= REJECTION_STAGE_OPTIONS.length) {
+          stage = REJECTION_STAGE_OPTIONS[asNumber - 1];
+        } else {
+          stage = trimmed;
+        }
+      }
+    }
     setProcessing(true);
     try {
-      await applicationApi.bulkUpdateStatus(selectedIds, status);
+      await applicationApi.bulkUpdateStatus(selectedIds, status, stage);
       alert(`Successfully updated ${selectedIds.length} application(s) to "${status}"`);
       setShowStatusMenu(false);
       onClear();

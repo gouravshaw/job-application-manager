@@ -81,6 +81,9 @@ export const TimelineView = ({ application }: TimelineViewProps) => {
                     {entry.notes && (
                       <p className="text-sm text-gray-700 mt-2 italic">"{entry.notes}"</p>
                     )}
+                    {entry.stage && (
+                      <p className="text-xs text-gray-500 mt-2">Stage: {entry.stage}</p>
+                    )}
                     {duration !== null && (
                       <p className="text-xs text-gray-500 mt-2">
                         Duration: {duration} {duration === 1 ? 'day' : 'days'}

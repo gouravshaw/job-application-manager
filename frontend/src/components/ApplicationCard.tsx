@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaFileAlt, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight } from 'react-icons/fa';
-import { JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS } from '../types';
+import { JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
 import { TagsInput } from './TagsInput';
 import { TimelineView, TimelineStats } from './TimelineView';
@@ -24,6 +24,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
   const [showInterviewPrep, setShowInterviewPrep] = useState(false);
   const [statusChangeDate, setStatusChangeDate] = useState(new Date().toISOString().slice(0, 16));
   const [statusChangeNotes, setStatusChangeNotes] = useState('');
+  const [statusChangeStage, setStatusChangeStage] = useState('');
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [archiving, setArchiving] = useState(false);
 
@@ -58,6 +59,33 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
     };
     return colors[status] || 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 dark:from-gray-700/40 dark:to-gray-600/40 dark:text-gray-300';
   };
+
+  const latestRejectedStage = useMemo(() => {
+    const normalizeHistory = (history: any): any[] => {
+      let h = history;
+      for (let i = 0; i < 2; i++) {
+        if (typeof h === 'string') {
+          try {
+            h = JSON.parse(h);
+          } catch {
+            break;
+          }
+        }
+      }
+      if (Array.isArray(h)) return h;
+      if (h && typeof h === 'object' && (h as any).status) return [h];
+      return [];
+    };
+
+    const historyArray = normalizeHistory(application.status_history);
+
+    for (const entry of [...historyArray].reverse()) {
+      if (entry.status === 'Rejected' && entry.stage) {
+        return entry.stage as string;
+      }
+    }
+    return undefined;
+  }, [application.status_history]);
 
   const getStatusBorderColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -128,6 +156,21 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
     }
   };
 
+  useEffect(() => {
+    if (isEditing && editData.status === 'Rejected' && statusChangeStage === '') {
+      // Try to default to last recorded stage if available
+      const lastRejectedEntry = application.status_history
+        ?.slice()
+        .reverse()
+        .find(entry => entry.status === 'Rejected' && entry.stage);
+      const fallbackStage = lastRejectedEntry?.stage || application.status || REJECTION_STAGE_OPTIONS[0];
+      setStatusChangeStage(fallbackStage);
+    }
+    if (editData.status !== 'Rejected' && statusChangeStage) {
+      setStatusChangeStage('');
+    }
+  }, [editData.status, statusChangeStage, application.status, isEditing]);
+
   const handleUpdate = async () => {
     try {
       // Build update payload with only non-empty values
@@ -157,10 +200,24 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
       if (editData.interview_questions) cleanedData.interview_questions = editData.interview_questions;
       if (editData.interview_date) cleanedData.interview_date = editData.interview_date;
       
+      const statusChanged = editData.status !== application.status;
+
       // If status changed, add status change info
-      if (editData.status !== application.status) {
+      if (statusChanged) {
         cleanedData.status_date = statusChangeDate;
         cleanedData.status_notes = statusChangeNotes || `Status changed to ${editData.status}`;
+        if (editData.status === 'Rejected') {
+          cleanedData.status_stage = statusChangeStage || application.status || 'Unknown stage';
+        } else if (statusChangeStage) {
+          cleanedData.status_stage = statusChangeStage;
+        }
+      } else if (editData.status === 'Rejected' && statusChangeStage) {
+        // Allow updating rejection stage without changing status
+        cleanedData.status_stage = statusChangeStage;
+        if (statusChangeNotes) {
+          cleanedData.status_notes = statusChangeNotes;
+        }
+        cleanedData.status_date = statusChangeDate;
       }
       
       await applicationApi.update(application.id, cleanedData);
@@ -180,6 +237,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
       alert('Application updated successfully!');
       setIsEditing(false);
       setStatusChangeNotes('');
+      setStatusChangeStage('');
       onUpdate();
     } catch (error) {
       console.error('Error updating application:', error);
@@ -294,10 +352,10 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
             </select>
           </div>
 
-          {/* Status Change Date and Notes */}
-          {statusChanged && (
+          {/* Status Change Date, Notes, and Rejection Stage */}
+          {(statusChanged || editData.status === 'Rejected') && (
             <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-md border border-blue-200 dark:border-blue-700">
-              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">Status Change Information</h4>
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">Status Details</h4>
               <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-sm text-blue-800 dark:text-blue-300 mb-1">Change Date & Time</label>
@@ -314,10 +372,27 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                     type="text"
                     value={statusChangeNotes}
                     onChange={(e) => setStatusChangeNotes(e.target.value)}
-                    placeholder={`Status changed to ${editData.status}`}
+                    placeholder={`Status: ${editData.status}`}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
                   />
                 </div>
+                {editData.status === 'Rejected' && (
+                  <div>
+                    <label className="block text-sm text-blue-800 dark:text-blue-300 mb-1">Rejection Stage</label>
+                    <select
+                      value={statusChangeStage}
+                      onChange={(e) => setStatusChangeStage(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {REJECTION_STAGE_OPTIONS.map(stage => (
+                        <option key={stage} value={stage}>{stage}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">
+                      Helps capture how far the process went before rejection.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -384,6 +459,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 setCvFile(null);
                 setCoverLetterFile(null);
                 setStatusChangeNotes('');
+                setStatusChangeStage('');
               }}
               className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600"
             >
@@ -421,6 +497,11 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
         </div>
         <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(application.status)}`}>
           {application.status}
+          {application.status === 'Rejected' && (
+            <span className="ml-1 text-[11px] font-semibold opacity-90">
+              — {latestRejectedStage || 'Not specified'}
+            </span>
+          )}
         </span>
       </div>
 
@@ -712,6 +793,11 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                         {entry.notes && (
                           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{entry.notes}</div>
                         )}
+                    {entry.stage && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Stage: {entry.stage}
+                      </div>
+                    )}
                       </div>
                     </div>
                   ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload } from 'react-icons/fa';
+import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCircle } from 'react-icons/fa';
 import { ApplicationStats } from '../types';
 import { applicationApi } from '../services/api';
 
@@ -62,6 +62,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
   if (!stats) {
     return <div>No data available</div>;
   }
+
+  const totalRejections = Object.values(stats.rejections_by_stage || {}).reduce((sum, count) => sum + count, 0);
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -182,6 +184,40 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
           ))}
         </div>
       </div>
+
+      {/* Rejections by Stage */}
+      {totalRejections > 0 && (
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg shadow-md">
+              <FaTimesCircle className="text-lg text-white" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Rejections by Stage</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Understand where applications drop off</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {Object.entries(stats.rejections_by_stage).map(([stage, count]) => {
+              const percentage = totalRejections ? Math.round((count / totalRejections) * 100) : 0;
+              return (
+                <div key={stage} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-800 dark:text-gray-200 font-medium">{stage}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{count} ({percentage}%)</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.max(4, percentage)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Domain Breakdown */}
       {Object.keys(stats.by_domain).length > 0 && (
