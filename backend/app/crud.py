@@ -33,9 +33,35 @@ def _latest_rejection_stage(history):
     entries = _normalize_history(history)
     if not entries:
         return None
-    for entry in reversed(entries):
+        
+    # Find the LATEST rejection event (search backwards)
+    for i in range(len(entries) - 1, -1, -1):
+        entry = entries[i]
         if isinstance(entry, dict) and entry.get("status") == "Rejected":
-            return entry.get("stage") or "Not specified"
+            stage_label = entry.get("stage")
+            
+            # Backtracking logic
+            if not stage_label or stage_label == "Rejected" or stage_label in ["Saved", "To Apply", "Unknown stage"]:
+                found_prev = False
+                # Look backwards from the rejection event
+                for prev_entry in reversed(entries[:i]):
+                    if isinstance(prev_entry, dict) and prev_entry.get("status") and prev_entry.get("status") not in ["Rejected", "Saved", "To Apply"]:
+                        stage_label = prev_entry.get("status")
+                        found_prev = True
+                        break
+                
+                if not found_prev:
+                    stage_label = "Not specified"
+
+            # Standardize labels
+            if stage_label == "Rejected":
+                stage_label = "Applied"
+                
+            if stage_label in ["Applied", "CV / Resume Screening"]:
+                stage_label = "CV Screening"
+                
+            return stage_label or "Not specified"
+            
     return None
 
 
@@ -270,14 +296,17 @@ def get_statistics(db: Session):
                 entries = json.loads(history)
             except json.JSONDecodeError:
                 continue
-        for entry in entries:
-            if not isinstance(entry, dict):
-                continue
-            if entry.get("status") == "Rejected":
-                stage_label = entry.get("stage") or "Unknown stage"
-                if stage_label in ["Saved", "To Apply", "Unknown stage", None, ""]:
-                    stage_label = "Not specified"
-                rejection_stage_counts[stage_label] += 1
+        
+        # Normalize to list
+        if isinstance(entries, dict):
+            entries = [entries]
+        if not isinstance(entries, list):
+            continue
+            
+        # Use shared helper to determine stage
+        stage_label = _latest_rejection_stage(entries)
+        if stage_label:
+            rejection_stage_counts[stage_label] += 1
     
     return schemas.ApplicationStats(
         total_applications=total,

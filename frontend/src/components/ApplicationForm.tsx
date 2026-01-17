@@ -89,7 +89,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
           }
           const companyMatch = app.company_name.toLowerCase() === formData.company_name.toLowerCase();
           const titleSimilar = app.job_title.toLowerCase().includes(formData.job_title.toLowerCase()) ||
-                              formData.job_title.toLowerCase().includes(app.job_title.toLowerCase());
+            formData.job_title.toLowerCase().includes(app.job_title.toLowerCase());
           return companyMatch && titleSimilar;
         });
 
@@ -220,7 +220,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 value={formData.company_name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., Google, Microsoft"
               />
             </div>
@@ -235,7 +235,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 value={formData.job_title}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., Cloud Engineer"
               />
             </div>
@@ -285,7 +285,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="domain"
                 value={formData.domain || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., Cloud Computing, DevOps"
               />
             </div>
@@ -297,7 +297,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="location"
                 value={formData.location || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., London, UK"
               />
             </div>
@@ -308,7 +308,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="work_type"
                 value={formData.work_type || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               >
                 <option value="">Select...</option>
                 {WORK_TYPE_OPTIONS.map(type => (
@@ -323,7 +323,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               >
                 {STATUS_OPTIONS.map(status => (
                   <option key={status} value={status}>{status}</option>
@@ -337,7 +337,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                   name="status_stage"
                   value={formData.status_stage || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 >
                   {REJECTION_STAGE_OPTIONS.map(stage => (
                     <option key={stage} value={stage}>{stage}</option>
@@ -356,7 +356,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="salary_min"
                 value={formData.salary_min || ''}
                 onChange={handleNumberChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., 30000"
               />
             </div>
@@ -368,7 +368,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="salary_max"
                 value={formData.salary_max || ''}
                 onChange={handleNumberChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., 45000"
               />
             </div>
@@ -382,7 +382,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
               name="job_url"
               value={formData.job_url || ''}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="https://..."
             />
           </div>
@@ -396,7 +396,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="application_date"
                 value={formData.application_date || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty if not applied yet</p>
             </div>
@@ -407,7 +407,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="applied_on"
                 value={formData.applied_on || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               >
                 <option value="">Select platform...</option>
                 {APPLIED_ON_OPTIONS.map(option => (
@@ -424,7 +424,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="application_deadline"
                 value={formData.application_deadline || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">When you need to apply by</p>
             </div>
@@ -439,7 +439,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="contact_person"
                 value={formData.contact_person || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="e.g., John Doe"
               />
             </div>
@@ -451,7 +451,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 name="contact_email"
                 value={formData.contact_email || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="contact@company.com"
               />
             </div>
@@ -465,7 +465,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
               value={formData.references || ''}
               onChange={handleInputChange}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Add any references or referrals..."
             />
           </div>
@@ -478,7 +478,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
               value={formData.job_description || ''}
               onChange={handleInputChange}
               rows={8}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 font-mono text-sm"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 font-mono text-sm"
               placeholder="Paste the full job description here from LinkedIn or job posting..."
             />
             <p className="text-xs text-gray-500 mt-1">Copy-paste the entire JD for review later</p>
@@ -492,7 +492,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 type="file"
                 onChange={(e) => setCvFile(e.target.files?.[0] || null)}
                 accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOC, DOCX (Max 5MB)</p>
             </div>
@@ -503,7 +503,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 type="file"
                 onChange={(e) => setCoverLetterFile(e.target.files?.[0] || null)}
                 accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOC, DOCX (Max 5MB)</p>
             </div>
@@ -517,7 +517,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
               value={formData.notes || ''}
               onChange={handleInputChange}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Any additional notes..."
             />
           </div>
@@ -537,7 +537,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
           <div className="border-t pt-4">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Interview Preparation</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Add this section when you get an interview scheduled</p>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interview Date & Time</label>
@@ -546,7 +546,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                   name="interview_date"
                   value={formData.interview_date || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 />
               </div>
 
@@ -557,7 +557,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                   value={formData.interview_notes || ''}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                   placeholder="Research about the company, role requirements, your talking points..."
                 />
               </div>
@@ -569,7 +569,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                   value={formData.interview_questions || ''}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                   placeholder="Questions you want to ask, or questions they asked during the interview..."
                 />
               </div>

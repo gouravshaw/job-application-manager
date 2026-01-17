@@ -136,7 +136,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         >
           <div className="flex items-start justify-between relative z-10">
             <div>
-              <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 mb-1 tracking-wide uppercase opacity-80">Applied</p>
+              <p className="text-sm font-bold text-cyan-600 dark:text-cyan-400 mb-1 tracking-wide uppercase opacity-80">Submitted</p>
               <p className="text-4xl font-extrabold text-cyan-600 dark:text-blue-400 mt-2">{getAppliedCount()}</p>
             </div>
             <div className="p-3.5 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform duration-300">
@@ -205,14 +205,23 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
             {Object.entries(stats.rejections_by_stage).map(([stage, count]) => {
               const percentage = totalRejections ? Math.round((count / totalRejections) * 100) : 0;
               return (
-                <div key={stage} className="space-y-2">
+                <div
+                  key={stage}
+                  className="space-y-2 cursor-pointer group hover:bg-red-50 dark:hover:bg-red-900/10 p-2 rounded-lg transition-colors -mx-2"
+                  onClick={() => {
+                    if (onCardClick) {
+                      onCardClick('rejectionStage', stage);
+                    }
+                  }}
+                  title={`View applications rejected at ${stage}`}
+                >
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-800 dark:text-gray-200 font-medium">{stage}</span>
+                    <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">{stage}</span>
                     <span className="text-gray-600 dark:text-gray-400">{count} ({percentage}%)</span>
                   </div>
                   <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
-                      className="h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 rounded-full transition-all duration-500"
+                      className="h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 rounded-full transition-all duration-500 group-hover:from-red-600 group-hover:via-rose-600 group-hover:to-pink-600"
                       style={{ width: `${Math.max(4, percentage)}%` }}
                     ></div>
                   </div>

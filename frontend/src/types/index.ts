@@ -108,7 +108,7 @@ export const APPLIED_ON_OPTIONS = [
 ];
 
 export const REJECTION_STAGE_OPTIONS = [
-  "CV / Resume Screening",
+  "CV Screening",
   "ATS / Keyword Filtering",
   "Recruiter Review",
   "Phone Screen",

@@ -105,12 +105,12 @@ export const BulkActionsBar = ({ selectedIds, onClear, onSuccess }: BulkActionsB
           </button>
 
           {showStatusMenu && (
-            <div className="absolute bottom-full mb-2 left-0 bg-white rounded-md shadow-lg py-2 w-48 max-h-64 overflow-y-auto">
+            <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg py-2 w-48 max-h-64 overflow-y-auto">
               {STATUS_OPTIONS.map(status => (
                 <button
                   key={status}
                   onClick={() => handleBulkStatusUpdate(status)}
-                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full text-left px-4 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   {status}
                 </button>

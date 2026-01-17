@@ -44,9 +44,11 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       } else if (initialFilter.type === 'applied') {
         // Filter to show only applied (not Saved/To Apply) - handled in loadApplications
         return { ...defaultFilters, status: '' };
+      } else if (initialFilter.type === 'rejectionStage') {
+        return { ...defaultFilters, status: 'Rejected', rejectionStage: initialFilter.value };
       }
     }
-    
+
     return defaultFilters;
   });
 
@@ -64,7 +66,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
     // (first render handled by useState)
     if (initialFilter && initialFilter !== prevInitialFilterRef.current) {
       prevInitialFilterRef.current = initialFilter;
-      
+
       if (initialFilter.type === 'status') {
         setFilters(prev => ({ ...prev, status: initialFilter.value }));
       } else if (initialFilter.type === 'domain') {
@@ -74,7 +76,9 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       } else if (initialFilter.type === 'applied') {
         setFilters(prev => ({ ...prev, status: '' }));
       } else if (initialFilter.type === 'all') {
-        setFilters(prev => ({ ...prev, status: '', domain: '', workType: '' }));
+        setFilters(prev => ({ ...prev, status: '', domain: '', workType: '', rejectionStage: '' }));
+      } else if (initialFilter.type === 'rejectionStage') {
+        setFilters(prev => ({ ...prev, status: 'Rejected', rejectionStage: initialFilter.value }));
       }
     }
   }, [initialFilter]);
@@ -100,9 +104,31 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
 
     const historyArray = normalizeHistory(app.status_history);
 
-    for (const entry of [...historyArray].reverse()) {
+    for (let i = historyArray.length - 1; i >= 0; i--) {
+      const entry = historyArray[i];
       if (entry.status === 'Rejected') {
-        return entry.stage || 'Not specified';
+        let stageLabel = entry.stage;
+
+        // Backtracking logic
+        if (!stageLabel || stageLabel === 'Rejected' || ['Saved', 'To Apply', 'Unknown stage'].includes(stageLabel)) {
+          let foundPrev = false;
+          for (let j = i - 1; j >= 0; j--) {
+            const prevEntry = historyArray[j];
+            if (prevEntry.status && !['Rejected', 'Saved', 'To Apply'].includes(prevEntry.status)) {
+              stageLabel = prevEntry.status;
+              foundPrev = true;
+              break;
+            }
+          }
+          if (!foundPrev) {
+            stageLabel = 'Not specified';
+          }
+        }
+
+        if (stageLabel === 'Rejected') stageLabel = 'Applied';
+        if (stageLabel === 'Applied') stageLabel = 'CV Screening';
+
+        return stageLabel;
       }
     }
     return undefined;
@@ -130,10 +156,10 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
   const loadApplications = async () => {
     try {
       setLoading(true);
-      
+
       // Check if status filter has multiple statuses (comma-separated)
       const hasMultipleStatuses = filters.status && filters.status.includes(',');
-      
+
       // Handle "Applied" filter (exclude Saved/To Apply)
       if (initialFilter?.type === 'applied') {
         const allData = await applicationApi.getAll({
@@ -157,7 +183,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
         setApplications(filtered);
         return;
       }
-      
+
       // Handle multiple statuses by fetching all and filtering client-side
       if (hasMultipleStatuses) {
         const allData = await applicationApi.getAll({
@@ -182,7 +208,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
         setApplications(filtered);
         return;
       }
-      
+
       // Normal case - single status or no status filter
       const data = await applicationApi.getAll({
         search: filters.search || undefined,
@@ -269,8 +295,8 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       {/* Header */}
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">My Applications</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white">My Applications</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             {applications.length} {applications.length === 1 ? 'application' : 'applications'}
             {selectedIds.length > 0 && ` (${selectedIds.length} selected)`}
           </p>
@@ -310,7 +336,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           {applications.length > 0 && (
             <button
               onClick={toggleSelectAll}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-medium"
             >
               {selectedIds.length === applications.length ? 'Deselect All' : 'Select All'}
             </button>
@@ -356,7 +382,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
                 type="checkbox"
                 checked={selectedIds.includes(app.id)}
                 onChange={() => toggleSelection(app.id)}
-                className="absolute top-4 left-4 w-5 h-5 text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 z-20 cursor-pointer shadow-md hover:scale-110 transition-transform"
+                className="absolute top-4 left-4 w-5 h-5 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500 z-20 cursor-pointer shadow-md hover:scale-110 transition-transform"
               />
               <div className={`transition-all h-full ${selectedIds.includes(app.id) ? 'ring-2 ring-blue-500 rounded-xl' : ''}`}>
                 <ApplicationCard

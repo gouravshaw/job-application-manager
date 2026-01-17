@@ -40,7 +40,7 @@ export const TagsInput = ({ tags, onChange, suggestions = [], placeholder = "Add
 
   return (
     <div className="relative">
-      <div className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+      <div className="w-full min-h-[42px] px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent bg-white dark:bg-slate-700">
         <div className="flex flex-wrap gap-2 items-center">
           {tags.map((tag, index) => (
             <span
@@ -69,19 +69,19 @@ export const TagsInput = ({ tags, onChange, suggestions = [], placeholder = "Add
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder={tags.length === 0 ? placeholder : ''}
-            className="flex-1 min-w-[120px] outline-none text-sm"
+            className="flex-1 min-w-[120px] outline-none text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
           />
         </div>
       </div>
 
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
           {filteredSuggestions.map((suggestion, index) => (
             <button
               key={index}
               type="button"
               onClick={() => addTag(suggestion)}
-              className="w-full text-left px-3 py-2 hover:bg-blue-50 transition-colors flex items-center gap-2"
+              className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-2"
             >
               <FaPlus className="text-xs text-gray-400" />
               {suggestion}
@@ -89,8 +89,8 @@ export const TagsInput = ({ tags, onChange, suggestions = [], placeholder = "Add
           ))}
         </div>
       )}
-      
-      <p className="text-xs text-gray-500 mt-1">Press Enter or comma to add tags</p>
+
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Press Enter or comma to add tags</p>
     </div>
   );
 };

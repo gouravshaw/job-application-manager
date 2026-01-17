@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaFileAlt, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight } from 'react-icons/fa';
+import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight } from 'react-icons/fa';
 import { JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
-import { TagsInput } from './TagsInput';
+
 import { TimelineView, TimelineStats } from './TimelineView';
 import { useToast } from '../context/ToastContext';
 
@@ -21,27 +21,13 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [showStatusHistory, setShowStatusHistory] = useState(false);
-  const [showJobDescription, setShowJobDescription] = useState(false);
-  const [showInterviewPrep, setShowInterviewPrep] = useState(false);
+
   const [statusChangeDate, setStatusChangeDate] = useState(new Date().toISOString().slice(0, 16));
   const [statusChangeNotes, setStatusChangeNotes] = useState('');
   const [statusChangeStage, setStatusChangeStage] = useState('');
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [archiving, setArchiving] = useState(false);
 
-  useEffect(() => {
-    loadTags();
-  }, []);
 
-  const loadTags = async () => {
-    try {
-      const tags = await applicationApi.getTags();
-      setAvailableTags(tags);
-    } catch (error) {
-      console.error('Error loading tags:', error);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
@@ -81,9 +67,31 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
 
     const historyArray = normalizeHistory(application.status_history);
 
-    for (const entry of [...historyArray].reverse()) {
-      if (entry.status === 'Rejected' && entry.stage) {
-        return entry.stage as string;
+    for (let i = historyArray.length - 1; i >= 0; i--) {
+      const entry = historyArray[i];
+      if (entry.status === 'Rejected') {
+        let stageLabel = entry.stage;
+
+        // Backtracking logic
+        if (!stageLabel || stageLabel === 'Rejected' || ['Saved', 'To Apply', 'Unknown stage'].includes(stageLabel)) {
+          let foundPrev = false;
+          for (let j = i - 1; j >= 0; j--) {
+            const prevEntry = historyArray[j];
+            if (prevEntry.status && !['Rejected', 'Saved', 'To Apply'].includes(prevEntry.status)) {
+              stageLabel = prevEntry.status;
+              foundPrev = true;
+              break;
+            }
+          }
+          if (!foundPrev) {
+            stageLabel = 'Not specified';
+          }
+        }
+
+        if (stageLabel === 'Rejected') stageLabel = 'Applied';
+        if (stageLabel === 'Applied') stageLabel = 'CV Screening';
+
+        return stageLabel;
       }
     }
     return undefined;
@@ -296,34 +304,34 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
               type="text"
               value={editData.company_name}
               onChange={(e) => setEditData({ ...editData, company_name: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Company Name"
             />
             <input
               type="text"
               value={editData.job_title}
               onChange={(e) => setEditData({ ...editData, job_title: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Job Title"
             />
             <input
               type="text"
               value={editData.domain || ''}
               onChange={(e) => setEditData({ ...editData, domain: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Domain"
             />
             <input
               type="text"
               value={editData.location || ''}
               onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               placeholder="Location"
             />
             <select
               value={editData.work_type || ''}
               onChange={(e) => setEditData({ ...editData, work_type: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
             >
               <option value="">Work Type</option>
               {WORK_TYPE_OPTIONS.map(type => (
@@ -336,7 +344,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 setEditData({ ...editData, status: e.target.value });
                 setStatusChangeDate(new Date().toISOString().slice(0, 16));
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
             >
               {STATUS_OPTIONS.map(status => (
                 <option key={status} value={status}>{status}</option>
@@ -345,7 +353,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
             <select
               value={editData.applied_on || ''}
               onChange={(e) => setEditData({ ...editData, applied_on: e.target.value })}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
             >
               <option value="">Applied On (optional)</option>
               {APPLIED_ON_OPTIONS.map(option => (
@@ -365,7 +373,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                     type="datetime-local"
                     value={statusChangeDate}
                     onChange={(e) => setStatusChangeDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -375,7 +383,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                     value={statusChangeNotes}
                     onChange={(e) => setStatusChangeNotes(e.target.value)}
                     placeholder={`Status: ${editData.status}`}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                   />
                 </div>
                 {editData.status === 'Rejected' && (
@@ -384,7 +392,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                     <select
                       value={statusChangeStage}
                       onChange={(e) => setStatusChangeStage(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     >
                       {REJECTION_STAGE_OPTIONS.map(stage => (
                         <option key={stage} value={stage}>{stage}</option>
@@ -406,7 +414,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 type="file"
                 onChange={(e) => setCvFile(e.target.files?.[0] || null)}
                 accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
             </div>
             <div>
@@ -415,7 +423,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 type="file"
                 onChange={(e) => setCoverLetterFile(e.target.files?.[0] || null)}
                 accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
             </div>
           </div>
@@ -423,7 +431,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
           <textarea
             value={editData.references || ''}
             onChange={(e) => setEditData({ ...editData, references: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
             rows={2}
             placeholder="References"
           />
@@ -433,7 +441,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
             <textarea
               value={editData.job_description || ''}
               onChange={(e) => setEditData({ ...editData, job_description: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 font-mono text-sm"
               rows={6}
               placeholder="Paste job description..."
             />
@@ -442,7 +450,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
           <textarea
             value={editData.notes || ''}
             onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
             rows={3}
             placeholder="Notes"
           />
@@ -500,7 +508,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
             <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getStatusColor(application.status)}`}>
               {application.status}
               {application.status === 'Rejected' && (
-                <span className="ml-1 text-[11px] font-semibold opacity-90">
+                <span className="ml-1 font-bold opacity-90">
                   — {latestRejectedStage || 'Not specified'}
                 </span>
               )}
