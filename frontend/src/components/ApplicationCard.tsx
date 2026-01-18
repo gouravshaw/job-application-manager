@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight } from 'react-icons/fa';
-import { JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
+import { JobApplication } from '../types';
 import { applicationApi } from '../services/api';
 
 import { TimelineView, TimelineStats } from './TimelineView';
+import { ApplicationForm } from './ApplicationForm';
 import { useToast } from '../context/ToastContext';
 
 interface ApplicationCardProps {
@@ -15,16 +16,9 @@ interface ApplicationCardProps {
 
 export const ApplicationCard = ({ application, onUpdate, isSelected = false, onContinueApplying }: ApplicationCardProps) => {
   const { showToast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [editData, setEditData] = useState(application);
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-
-  const [statusChangeDate, setStatusChangeDate] = useState(new Date().toISOString().slice(0, 16));
-  const [statusChangeNotes, setStatusChangeNotes] = useState('');
-  const [statusChangeStage, setStatusChangeStage] = useState('');
   const [archiving, setArchiving] = useState(false);
 
 
@@ -166,94 +160,9 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
     }
   };
 
-  useEffect(() => {
-    if (isEditing && editData.status === 'Rejected' && statusChangeStage === '') {
-      // Try to default to last recorded stage if available
-      const lastRejectedEntry = application.status_history
-        ?.slice()
-        .reverse()
-        .find(entry => entry.status === 'Rejected' && entry.stage);
-      const fallbackStage = lastRejectedEntry?.stage || application.status || REJECTION_STAGE_OPTIONS[0];
-      setStatusChangeStage(fallbackStage);
-    }
-    if (editData.status !== 'Rejected' && statusChangeStage) {
-      setStatusChangeStage('');
-    }
-  }, [editData.status, statusChangeStage, application.status, isEditing]);
 
-  const handleUpdate = async () => {
-    try {
-      // Build update payload with only non-empty values
-      const cleanedData: any = {
-        company_name: editData.company_name,
-        job_title: editData.job_title,
-        status: editData.status,
-      };
 
-      // Add optional fields only if they have values
-      if (editData.application_date) cleanedData.application_date = editData.application_date;
-      if (editData.application_deadline) cleanedData.application_deadline = editData.application_deadline;
-      if (editData.applied_on) cleanedData.applied_on = editData.applied_on;
-      if (editData.job_url) cleanedData.job_url = editData.job_url;
-      if (editData.location) cleanedData.location = editData.location;
-      if (editData.work_type) cleanedData.work_type = editData.work_type;
-      if (editData.domain) cleanedData.domain = editData.domain;
-      if (editData.salary_min !== undefined) cleanedData.salary_min = editData.salary_min;
-      if (editData.salary_max !== undefined) cleanedData.salary_max = editData.salary_max;
-      if (editData.contact_person) cleanedData.contact_person = editData.contact_person;
-      if (editData.contact_email) cleanedData.contact_email = editData.contact_email;
-      if (editData.references) cleanedData.references = editData.references;
-      if (editData.job_description) cleanedData.job_description = editData.job_description;
-      if (editData.notes) cleanedData.notes = editData.notes;
-      if (editData.tags && editData.tags.length > 0) cleanedData.tags = editData.tags;
-      if (editData.interview_notes) cleanedData.interview_notes = editData.interview_notes;
-      if (editData.interview_questions) cleanedData.interview_questions = editData.interview_questions;
-      if (editData.interview_date) cleanedData.interview_date = editData.interview_date;
 
-      const statusChanged = editData.status !== application.status;
-
-      // If status changed, add status change info
-      if (statusChanged) {
-        cleanedData.status_date = statusChangeDate;
-        cleanedData.status_notes = statusChangeNotes || `Status changed to ${editData.status}`;
-        if (editData.status === 'Rejected') {
-          cleanedData.status_stage = statusChangeStage || application.status || 'Unknown stage';
-        } else if (statusChangeStage) {
-          cleanedData.status_stage = statusChangeStage;
-        }
-      } else if (editData.status === 'Rejected' && statusChangeStage) {
-        // Allow updating rejection stage without changing status
-        cleanedData.status_stage = statusChangeStage;
-        if (statusChangeNotes) {
-          cleanedData.status_notes = statusChangeNotes;
-        }
-        cleanedData.status_date = statusChangeDate;
-      }
-
-      await applicationApi.update(application.id, cleanedData);
-
-      // Upload new CV if provided
-      if (cvFile) {
-        await applicationApi.uploadDocument(application.id, 'cv', cvFile);
-        setCvFile(null);
-      }
-
-      // Upload new cover letter if provided
-      if (coverLetterFile) {
-        await applicationApi.uploadDocument(application.id, 'coverletter', coverLetterFile);
-        setCoverLetterFile(null);
-      }
-
-      showToast('Application updated successfully!', 'success');
-      setIsEditing(false);
-      setStatusChangeNotes('');
-      setStatusChangeStage('');
-      onUpdate();
-    } catch (error) {
-      console.error('Error updating application:', error);
-      showToast('Failed to update application.', 'error');
-    }
-  };
 
   const handleDownloadCV = async () => {
     if (application.cv_filename) {
@@ -293,193 +202,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
     });
   };
 
-  if (isEditing) {
-    const statusChanged = editData.status !== application.status;
 
-    return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border-l-4 border-blue-500">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="text"
-              value={editData.company_name}
-              onChange={(e) => setEditData({ ...editData, company_name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              placeholder="Company Name"
-            />
-            <input
-              type="text"
-              value={editData.job_title}
-              onChange={(e) => setEditData({ ...editData, job_title: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              placeholder="Job Title"
-            />
-            <input
-              type="text"
-              value={editData.domain || ''}
-              onChange={(e) => setEditData({ ...editData, domain: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              placeholder="Domain"
-            />
-            <input
-              type="text"
-              value={editData.location || ''}
-              onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              placeholder="Location"
-            />
-            <select
-              value={editData.work_type || ''}
-              onChange={(e) => setEditData({ ...editData, work_type: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-            >
-              <option value="">Work Type</option>
-              {WORK_TYPE_OPTIONS.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-            <select
-              value={editData.status}
-              onChange={(e) => {
-                setEditData({ ...editData, status: e.target.value });
-                setStatusChangeDate(new Date().toISOString().slice(0, 16));
-              }}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-            >
-              {STATUS_OPTIONS.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-            <select
-              value={editData.applied_on || ''}
-              onChange={(e) => setEditData({ ...editData, applied_on: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-            >
-              <option value="">Applied On (optional)</option>
-              {APPLIED_ON_OPTIONS.map(option => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Change Date, Notes, and Rejection Stage */}
-          {(statusChanged || editData.status === 'Rejected') && (
-            <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-md border border-blue-200 dark:border-blue-700">
-              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">Status Details</h4>
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="block text-sm text-blue-800 dark:text-blue-300 mb-1">Change Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    value={statusChangeDate}
-                    onChange={(e) => setStatusChangeDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-blue-800 dark:text-blue-300 mb-1">Notes (optional)</label>
-                  <input
-                    type="text"
-                    value={statusChangeNotes}
-                    onChange={(e) => setStatusChangeNotes(e.target.value)}
-                    placeholder={`Status: ${editData.status}`}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-                  />
-                </div>
-                {editData.status === 'Rejected' && (
-                  <div>
-                    <label className="block text-sm text-blue-800 dark:text-blue-300 mb-1">Rejection Stage</label>
-                    <select
-                      value={statusChangeStage}
-                      onChange={(e) => setStatusChangeStage(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                    >
-                      {REJECTION_STAGE_OPTIONS.map(stage => (
-                        <option key={stage} value={stage}>{stage}</option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-blue-700 dark:text-blue-200 mt-1">
-                      Helps capture how far the process went before rejection.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-600 dark:text-gray-300">Upload New CV</label>
-              <input
-                type="file"
-                onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-                accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600 dark:text-gray-300">Upload New Cover Letter</label>
-              <input
-                type="file"
-                onChange={(e) => setCoverLetterFile(e.target.files?.[0] || null)}
-                accept=".pdf,.doc,.docx"
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-              />
-            </div>
-          </div>
-
-          <textarea
-            value={editData.references || ''}
-            onChange={(e) => setEditData({ ...editData, references: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-            rows={2}
-            placeholder="References"
-          />
-
-          <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Job Description</label>
-            <textarea
-              value={editData.job_description || ''}
-              onChange={(e) => setEditData({ ...editData, job_description: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400 font-mono text-sm"
-              rows={6}
-              placeholder="Paste job description..."
-            />
-          </div>
-
-          <textarea
-            value={editData.notes || ''}
-            onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
-            rows={3}
-            placeholder="Notes"
-          />
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleUpdate}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Save
-            </button>
-            <button
-              onClick={() => {
-                setIsEditing(false);
-                setEditData(application);
-                setCvFile(null);
-                setCoverLetterFile(null);
-                setStatusChangeNotes('');
-                setStatusChangeStage('');
-              }}
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -629,7 +352,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100/50 dark:border-gray-700/50 mt-2" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => setShowEditModal(true)}
             className="flex-1 flex items-center justify-center gap-1.5 btn-secondary text-sm"
             title="Edit"
           >
@@ -907,6 +630,20 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
           </div>
         </div>
       )}
+
+      {/* Edit Application Modal */}
+      {showEditModal && (
+        <ApplicationForm
+          isEdit={true}
+          initialData={application}
+          onSuccess={() => {
+            setShowEditModal(false);
+            onUpdate();
+          }}
+          onCancel={() => setShowEditModal(false)}
+        />
+      )}
+
     </>
   );
 };
