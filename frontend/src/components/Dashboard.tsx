@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCircle } from 'react-icons/fa';
+import { useEffect, useState, useRef } from 'react';
+import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCircle, FaCloudDownloadAlt, FaCloudUploadAlt } from 'react-icons/fa';
 import { ApplicationStats } from '../types';
 import { applicationApi } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 interface DashboardProps {
   onCardClick?: (filterType: string, filterValue: string) => void;
@@ -12,9 +13,51 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
+  // Backup & Restore
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const { showToast } = useToast();
+
   useEffect(() => {
+    // Check for successful restore after reload
+    if (sessionStorage.getItem('restoreSuccess') === 'true') {
+      showToast('Database restored successfully!', 'success');
+      sessionStorage.removeItem('restoreSuccess');
+    }
     loadStats();
   }, []);
+
+  const handleRestoreClick = () => {
+    if (window.confirm('WARNING: Restoring a database will OVERWRITE all current data. This action cannot be undone. Are you sure?')) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.db')) {
+      showToast('Please upload a valid .db file', 'error');
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      await applicationApi.restore(file);
+      // Set flag for success message after reload
+      sessionStorage.setItem('restoreSuccess', 'true');
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to restore database:', error);
+      showToast('Failed to restore database', 'error');
+      setIsRestoring(false);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -42,10 +85,10 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
     try {
       setDownloading(true);
       await applicationApi.exportToExcel();
-      alert('Excel file downloaded successfully!');
+      showToast('Excel file downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      alert('Failed to export data. Please try again.');
+      showToast('Failed to export data', 'error');
     } finally {
       setDownloading(false);
     }
@@ -80,20 +123,60 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
 
   return (
     <div className="space-y-8">
-      {/* Header with Export Button */}
-      <div className="flex justify-between items-center mb-2">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept=".db"
+        className="hidden"
+      />
+
+      {/* Header with Actions */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Dashboard</h2>
           <p className="text-gray-600 dark:text-gray-400">Track your job application progress</p>
         </div>
-        <button
-          onClick={handleExportExcel}
-          disabled={downloading || stats.total_applications === 0}
-          className="flex items-center gap-2 btn-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaDownload />
-          {downloading ? 'Downloading...' : 'Export to Excel'}
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* Backup Button */}
+          <button
+            onClick={applicationApi.backup}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            title="Backup Database"
+          >
+            <FaCloudDownloadAlt className="text-blue-500" />
+            <span className="font-medium">Backup</span>
+          </button>
+
+          {/* Restore Button */}
+          <button
+            onClick={handleRestoreClick}
+            disabled={isRestoring}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50"
+            title="Restore Database"
+          >
+            {isRestoring ? (
+              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FaCloudUploadAlt className="text-red-500" />
+            )}
+            <span className="font-medium">Restore</span>
+          </button>
+
+          <div className="w-px h-8 bg-gray-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+
+          {/* Export Button */}
+          <button
+            onClick={handleExportExcel}
+            disabled={downloading || stats.total_applications === 0}
+            className="flex items-center gap-2 btn-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaDownload />
+            {downloading ? 'Exporting...' : 'Export to Excel'}
+          </button>
+        </div>
       </div>
 
       {/* Main Stats Cards */}

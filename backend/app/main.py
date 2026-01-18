@@ -275,3 +275,47 @@ def get_unique_domains(db: Session = Depends(get_db)):
     ).distinct().all()
     return [domain[0] for domain in domains if domain[0]]
 
+
+# Backup and Restore endpoints
+@app.get("/api/backup")
+def backup_database():
+    """Download the current database file backup"""
+    db_path = "job_tracker.db"
+    
+    if not os.path.exists(db_path):
+        raise HTTPException(status_code=404, detail="Database file not found")
+        
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"job_tracker_backup_{timestamp}.db"
+    
+    return FileResponse(
+        path=db_path,
+        filename=filename,
+        media_type="application/octet-stream"
+    )
+
+@app.post("/api/restore")
+async def restore_database(file: UploadFile = File(...)):
+    """Restore database from uploaded file"""
+    if not file.filename.endswith('.db'):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .db file")
+    
+    db_path = "job_tracker.db"
+    backup_path = f"job_tracker.db.bak_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    try:
+        # Create a backup of the current DB just in case
+        if os.path.exists(db_path):
+            shutil.copy2(db_path, backup_path)
+            
+        # Save uploaded file
+        with open(db_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return {"message": "Database restored successfully. Please refresh the page."}
+        
+    except Exception as e:
+        # Try to restore from backup if something went wrong
+        if os.path.exists(backup_path):
+            shutil.copy2(backup_path, db_path)
+        raise HTTPException(status_code=500, detail=f"Error restoring database: {str(e)}")

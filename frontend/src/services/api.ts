@@ -139,12 +139,28 @@ export const applicationApi = {
     await api.post('/applications/bulk/unarchive', ids);
   },
 
+
   bulkUpdateStatus: async (ids: number[], status: string, stage?: string): Promise<void> => {
     const params = new URLSearchParams({ status });
     if (stage) {
       params.append('stage', stage);
     }
     await api.post(`/applications/bulk/update-status?${params.toString()}`, ids);
+  },
+
+  // Backup & Restore
+  backup: () => {
+    window.open(`${API_BASE_URL}/api/backup`, '_blank');
+  },
+
+  restore: async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    await api.post('/api/restore', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 };
 

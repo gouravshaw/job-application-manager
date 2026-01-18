@@ -93,7 +93,8 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                               </nav>
 
                               {/* Bottom Actions */}
-                              <div className="mt-auto px-2">
+                              <div className="mt-auto px-2 space-y-4">
+                                    {/* Theme Section */}
                                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/50">
                                           <div className="flex items-center justify-between">
                                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
@@ -109,7 +110,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                                           </div>
                                     </div>
 
-                                    <div className="mt-6 text-center">
+                                    <div className="text-center">
                                           <p className="text-xs text-gray-400 dark:text-gray-600 font-medium">v2.0.0 • 2026</p>
                                     </div>
                               </div>
