@@ -80,6 +80,7 @@ export const STATUS_OPTIONS = [
   "Screening",
   "Aptitude Test",
   "Interview",
+  "Interview Result Awaited",
   "Technical Test",
   "Second Interview",
   "Final Interview",
