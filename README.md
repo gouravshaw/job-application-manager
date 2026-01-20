@@ -30,6 +30,8 @@ A full-stack web application to track and manage job applications. Built with Fa
 - **Keyboard Shortcuts** - Quick actions with keyboard (N=New, /=Search, Esc=Close)
 - **Mobile Responsive** - Works perfectly on phones and tablets
 - **Excel Export** - Download all data in Excel format
+- **In-App Backup & Restore** - One-click database backup/restore directly from the Dashboard
+- **Interview Result Awaited Status** - Distinct status to track applications awaiting post-interview feedback
 
 ## Quick Start
 
@@ -59,19 +61,22 @@ chmod +x start_docker.sh
 
 ## Status Options
 
-- **Saved** - Jobs you want to apply to later
-- **To Apply** - Jobs marked for application
-- Applied
-- Screening
-- Aptitude Test
-- Interview
-- Technical Test
-- Second Interview
-- Final Interview
-- Offer
-- Accepted
-- Rejected
-- Withdrawn
+| Status | Description |
+|--------|-------------|
+| **Saved** | Jobs you want to apply to later |
+| **To Apply** | Jobs marked for application |
+| Applied | Initial application submitted |
+| Screening | Initial HR/recruiter screening |
+| Aptitude Test | Online assessment or aptitude test |
+| Interview | Scheduled for an interview |
+| **Interview Result Awaited** | Interview completed, awaiting decision |
+| Technical Test | Take-home assignment or coding challenge |
+| Second Interview | Follow-up interview |
+| Final Interview | Final round interview |
+| Offer | Received a job offer |
+| Accepted | Offer accepted |
+| Rejected | Application rejected at any stage |
+| Withdrawn | You withdrew your application |
 
 ## Key Features Explained
 
@@ -191,12 +196,20 @@ All data is stored on your computer at:
 
 ### Backup Your Data
 
-**Windows:**
+**Option 1: In-App Backup/Restore (Recommended)**
+1. Go to the **Dashboard**.
+2. Click the **Backup** button (cloud icon) in the top-right header.
+3. Your `job_tracker.db` file will be downloaded.
+4. To restore, click **Restore**, select your `.db` file, and confirm.
+
+**Option 2: Script-based Backup**
+
+*Windows:*
 ```bash
 backup_data.bat
 ```
 
-**Linux/Mac:**
+*Linux/Mac:*
 ```bash
 ./backup_data.sh
 ```
