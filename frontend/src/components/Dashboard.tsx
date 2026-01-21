@@ -113,7 +113,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
       Applied: 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300',
       Screening: 'bg-gradient-to-br from-yellow-100 to-amber-200 text-yellow-700 dark:from-yellow-900/40 dark:to-amber-800/40 dark:text-yellow-300',
       Interview: 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700 dark:from-purple-900/40 dark:to-purple-800/40 dark:text-purple-300',
-      'Interview Result Awaited': 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-700 dark:from-orange-900/40 dark:to-orange-800/40 dark:text-orange-300',
+      'Interview Result Awaited': 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 dark:from-amber-500/30 dark:to-amber-400/20 dark:text-amber-300',
       'Technical Test': 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-700 dark:from-orange-900/40 dark:to-orange-800/40 dark:text-orange-300',
       Offer: 'bg-gradient-to-br from-emerald-100 to-green-200 text-emerald-700 dark:from-emerald-900/40 dark:to-green-800/40 dark:text-emerald-300',
       Rejected: 'bg-gradient-to-br from-red-100 to-red-200 text-red-700 dark:from-red-900/40 dark:to-red-800/40 dark:text-red-300',
@@ -305,7 +305,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
                   </div>
                   <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
-                      className="h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 rounded-full transition-all duration-500 group-hover:from-red-600 group-hover:via-rose-600 group-hover:to-pink-600"
+                      className="h-2 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-full transition-all duration-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-fuchsia-600"
                       style={{ width: `${Math.max(4, percentage)}%` }}
                     ></div>
                   </div>
