@@ -305,7 +305,10 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
                   </div>
                   <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
-                      className="h-2 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-full transition-all duration-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-fuchsia-600"
+                      className={`h-2 rounded-full transition-all duration-500 ${stage === 'CV Screening'
+                          ? 'bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 group-hover:from-red-600 group-hover:via-rose-600 group-hover:to-pink-600'
+                          : 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-fuchsia-600'
+                        }`}
                       style={{ width: `${Math.max(4, percentage)}%` }}
                     ></div>
                   </div>
