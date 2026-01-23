@@ -306,8 +306,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
                   <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className={`h-2 rounded-full transition-all duration-500 ${stage === 'CV Screening'
-                          ? 'bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 group-hover:from-red-600 group-hover:via-rose-600 group-hover:to-pink-600'
-                          : 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-fuchsia-600'
+                        ? 'bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 group-hover:from-red-600 group-hover:via-rose-600 group-hover:to-pink-600'
+                        : 'bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 group-hover:from-violet-600 group-hover:via-purple-600 group-hover:to-fuchsia-600'
                         }`}
                       style={{ width: `${Math.max(4, percentage)}%` }}
                     ></div>
@@ -346,26 +346,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         </div>
       )}
 
-      {/* Work Type Breakdown */}
-      {Object.keys(stats.by_work_type).length > 0 && (
-        <div className="glass-card p-6 rounded-2xl">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Applications by Work Type</h3>
-          <div className="flex gap-6 justify-around flex-wrap">
-            {Object.entries(stats.by_work_type).map(([workType, count]) => (
-              <div
-                key={workType}
-                className="text-center cursor-pointer hover:scale-110 transition-transform"
-                onClick={() => onCardClick && onCardClick('workType', workType)}
-              >
-                <div className="bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 text-blue-600 dark:text-blue-400 rounded-2xl w-24 h-24 flex items-center justify-center mx-auto mb-3 shadow-sm hover:shadow-lg transition-all border border-blue-200 dark:border-blue-800/50">
-                  <span className="text-3xl font-bold">{count}</span>
-                </div>
-                <p className="text-gray-700 dark:text-gray-300 font-medium">{workType}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };
