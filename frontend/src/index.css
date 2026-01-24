@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply antialiased text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 min-h-screen selection:bg-blue-500/30;
+    @apply antialiased text-slate-900 dark:text-slate-100 bg-gray-50 dark:bg-slate-900 min-h-screen selection:bg-blue-500/30;
     font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
   }
 }
@@ -81,7 +81,7 @@
   }
 
   .glass-card {
-    @apply bg-white/60 backdrop-blur-md border border-white/50 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300;
+    @apply bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300;
   }
 
   /* Dark Mode Glass - Overrides */

@@ -40,7 +40,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                   <aside
                         className={`
           fixed lg:sticky top-0 left-0 z-40 h-screen w-[280px]
-          bg-white/80 dark:bg-slate-950/90 backdrop-blur-xl
+          bg-white dark:bg-slate-950/90 backdrop-blur-xl
           border-r border-gray-200 dark:border-slate-800
           shadow-xl shadow-blue-500/5 dark:shadow-none
           transition-transform duration-300 ease-in-out
