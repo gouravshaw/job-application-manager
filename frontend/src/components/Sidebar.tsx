@@ -110,9 +110,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                                           </div>
                                     </div>
 
-                                    <div className="text-center">
-                                          <p className="text-xs text-gray-400 dark:text-gray-600 font-medium">v2.0.0 • 2026</p>
-                                    </div>
+
                               </div>
                         </div>
                   </aside>

@@ -26,7 +26,7 @@ A full-stack web application to track and manage job applications. Built with Fa
 - **Interview Preparation** - Dedicated section for interview date, prep notes, and questions
 - **Visual Timeline** - See the complete journey of each application with duration tracking
 - **Duplicate Detection** - Get warned when adding similar applications
-- **Dark Mode** - Toggle between light and dark themes
+- **Modern UI Design** - Professional Light theme with cleaner aesthetics and sleek Dark mode
 - **Keyboard Shortcuts** - Quick actions with keyboard (N=New, /=Search, Esc=Close)
 - **Mobile Responsive** - Works perfectly on phones and tablets
 - **Excel Export** - Download all data in Excel format
@@ -112,7 +112,7 @@ chmod +x start_docker.sh
   - Filter by Tags
   - Show/Hide Archived applications
 - **Sorting**: Choose what to sort by (Date Added, Deadline, Company, Status, Salary) and direction (ascending/descending)
-- All filters work together for precise results
+- **All filters work together for precise results**
 
 ### 2. Tags System
 - **Adding Tags**: When creating or editing an application, add custom tags
@@ -159,7 +159,7 @@ chmod +x start_docker.sh
 - **Prevents Mistakes**: Helps avoid accidentally applying twice
 
 ### 8. Dark Mode
-- **Toggle**: Sun/Moon icon in the top-right header
+- **Toggle**: Sun/Moon icon in the side menu
 - **Persistent**: Your choice is saved and remembered
 - **Full Support**: Every component supports dark mode
 - **Smooth Transition**: Animated color transitions
@@ -197,8 +197,8 @@ All data is stored on your computer at:
 ### Backup Your Data
 
 **Option 1: In-App Backup/Restore (Recommended)**
-1. Go to the **Dashboard**.
-2. Click the **Backup** button (cloud icon) in the top-right header.
+1. Go to the **Dashboard** page.
+2. Click the **Backup** button (cloud icon) in the top-right corner.
 3. Your `job_tracker.db` file will be downloaded.
 4. To restore, click **Restore**, select your `.db` file, and confirm.
 
