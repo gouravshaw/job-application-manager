@@ -183,7 +183,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
       {/* Main Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <div
-          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-blue-100/50 dark:border-blue-800/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/40 dark:to-indigo-900/40 backdrop-blur-md cursor-pointer group"
+          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-blue-100/50 dark:border-blue-800/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/40 dark:to-indigo-900/40 backdrop-blur-md cursor-pointer group animate-slideUp"
+          style={{ animationDelay: '0ms', animationFillMode: 'both' }}
           onClick={() => onCardClick && onCardClick('all', '')}
         >
           <div className="flex items-start justify-between relative z-10">
@@ -199,7 +200,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         </div>
 
         <div
-          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-indigo-100/50 dark:border-indigo-800/30 bg-gradient-to-br from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/40 dark:to-purple-900/40 backdrop-blur-md cursor-pointer group"
+          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-indigo-100/50 dark:border-indigo-800/30 bg-gradient-to-br from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/40 dark:to-purple-900/40 backdrop-blur-md cursor-pointer group animate-slideUp"
+          style={{ animationDelay: '100ms', animationFillMode: 'both' }}
           onClick={() => onCardClick && onCardClick('status', 'Saved,To Apply')}
         >
           <div className="flex items-start justify-between relative z-10">
@@ -215,7 +217,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         </div>
 
         <div
-          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-cyan-100/50 dark:border-cyan-800/30 bg-gradient-to-br from-cyan-50/80 to-blue-50/80 dark:from-cyan-900/40 dark:to-blue-900/40 backdrop-blur-md cursor-pointer group"
+          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-cyan-100/50 dark:border-cyan-800/30 bg-gradient-to-br from-cyan-50/80 to-blue-50/80 dark:from-cyan-900/40 dark:to-blue-900/40 backdrop-blur-md cursor-pointer group animate-slideUp"
+          style={{ animationDelay: '200ms', animationFillMode: 'both' }}
           onClick={() => onCardClick && onCardClick('applied', 'true')}
         >
           <div className="flex items-start justify-between relative z-10">
@@ -231,7 +234,8 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         </div>
 
         <div
-          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-emerald-100/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/40 dark:to-green-900/40 backdrop-blur-md group"
+          className="relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl border border-emerald-100/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/40 dark:to-green-900/40 backdrop-blur-md group animate-slideUp"
+          style={{ animationDelay: '300ms', animationFillMode: 'both' }}
         >
           <div className="flex items-start justify-between relative z-10">
             <div>
@@ -252,7 +256,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
       </div>
 
       {/* Status Breakdown */}
-      <div className="glass-card p-6 rounded-2xl">
+      <div className="glass-card p-6 rounded-2xl animate-slideUp" style={{ animationDelay: '400ms', animationFillMode: 'both' }}>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg shadow-md">
             <FaChartPie className="text-lg text-white" />
@@ -275,7 +279,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
 
       {/* Rejections by Stage */}
       {totalRejections > 0 && (
-        <div className="glass-card p-6 rounded-2xl">
+        <div className="glass-card p-6 rounded-2xl animate-slideUp" style={{ animationDelay: '500ms', animationFillMode: 'both' }}>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg shadow-md">
               <FaTimesCircle className="text-lg text-white" />
@@ -321,7 +325,7 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
 
       {/* Domain Breakdown */}
       {Object.keys(stats.by_domain).length > 0 && (
-        <div className="glass-card p-6 rounded-2xl">
+        <div className="glass-card p-6 rounded-2xl animate-slideUp" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Applications by Domain</h3>
           <div className="space-y-4">
             {Object.entries(stats.by_domain).map(([domain, count]) => (
