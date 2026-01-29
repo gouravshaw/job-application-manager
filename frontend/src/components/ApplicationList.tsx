@@ -343,7 +343,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+            className="flex items-center gap-2 bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] transition-all shadow-md"
             title="Keyboard shortcut: N"
           >
             <FaPlus />

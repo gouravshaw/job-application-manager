@@ -95,7 +95,7 @@
 
   /* Buttons */
   .btn-primary {
-    @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all;
+    @apply bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all;
   }
 
   .btn-secondary {

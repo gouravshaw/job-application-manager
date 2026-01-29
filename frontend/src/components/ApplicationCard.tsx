@@ -25,22 +25,22 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
 
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
-      Saved: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 dark:from-gray-700/40 dark:to-gray-600/40 dark:text-gray-300',
-      'To Apply': 'bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-700 dark:from-indigo-900/40 dark:to-indigo-800/40 dark:text-indigo-300',
-      Applied: 'bg-gradient-to-r from-blue-100 to-cyan-200 text-blue-700 dark:from-blue-900/40 dark:to-cyan-800/40 dark:text-blue-300',
-      Screening: 'bg-gradient-to-r from-yellow-100 to-amber-200 text-yellow-700 dark:from-yellow-900/40 dark:to-amber-800/40 dark:text-yellow-300',
-      'Aptitude Test': 'bg-gradient-to-r from-amber-100 to-orange-200 text-amber-700 dark:from-amber-900/40 dark:to-orange-800/40 dark:text-amber-300',
-      Interview: 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-700 dark:from-purple-900/40 dark:to-purple-800/40 dark:text-purple-300',
-      'Interview Result Awaited': 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-700 dark:from-amber-500/30 dark:to-amber-400/20 dark:text-amber-300',
-      'Technical Test': 'bg-gradient-to-r from-orange-100 to-red-200 text-orange-700 dark:from-orange-900/40 dark:to-red-800/40 dark:text-orange-300',
-      'Second Interview': 'bg-gradient-to-r from-violet-100 to-purple-200 text-violet-700 dark:from-violet-900/40 dark:to-purple-800/40 dark:text-violet-300',
-      'Final Interview': 'bg-gradient-to-r from-fuchsia-100 to-pink-200 text-fuchsia-700 dark:from-fuchsia-900/40 dark:to-pink-800/40 dark:text-fuchsia-300',
-      Offer: 'bg-gradient-to-r from-emerald-100 to-green-200 text-emerald-700 dark:from-emerald-900/40 dark:to-green-800/40 dark:text-emerald-300',
-      Accepted: 'bg-gradient-to-r from-green-100 to-teal-200 text-green-700 dark:from-green-900/40 dark:to-teal-800/40 dark:text-green-300',
-      Rejected: 'bg-gradient-to-r from-red-100 to-rose-200 text-red-700 dark:from-red-900/40 dark:to-rose-800/40 dark:text-red-300',
-      Withdrawn: 'bg-gradient-to-r from-gray-100 to-slate-200 text-gray-700 dark:from-gray-700/40 dark:to-slate-600/40 dark:text-gray-300',
+      Saved: 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 dark:from-gray-700/40 dark:to-gray-600/40 dark:text-gray-300',
+      'To Apply': 'bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700 dark:from-indigo-900/40 dark:to-indigo-800/40 dark:text-indigo-300',
+      Applied: 'bg-gradient-to-br from-blue-100 to-cyan-200 text-blue-700 dark:from-blue-900/40 dark:to-cyan-800/40 dark:text-blue-300',
+      Screening: 'bg-gradient-to-br from-yellow-100 to-amber-200 text-yellow-700 dark:from-yellow-900/40 dark:to-amber-800/40 dark:text-yellow-300',
+      'Aptitude Test': 'bg-gradient-to-br from-amber-100 to-orange-200 text-amber-700 dark:from-amber-900/40 dark:to-orange-800/40 dark:text-amber-300',
+      Interview: 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700 dark:from-purple-900/40 dark:to-purple-800/40 dark:text-purple-300',
+      'Interview Result Awaited': 'bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 dark:from-amber-500/30 dark:to-amber-400/20 dark:text-amber-300',
+      'Technical Test': 'bg-gradient-to-br from-orange-100 to-red-200 text-orange-700 dark:from-orange-900/40 dark:to-red-800/40 dark:text-orange-300',
+      'Second Interview': 'bg-gradient-to-br from-violet-100 to-purple-200 text-violet-700 dark:from-violet-900/40 dark:to-purple-800/40 dark:text-violet-300',
+      'Final Interview': 'bg-gradient-to-br from-fuchsia-100 to-pink-200 text-fuchsia-700 dark:from-fuchsia-900/40 dark:to-pink-800/40 dark:text-fuchsia-300',
+      Offer: 'bg-gradient-to-br from-emerald-100 to-green-200 text-emerald-700 dark:from-emerald-900/40 dark:to-green-800/40 dark:text-emerald-300',
+      Accepted: 'bg-gradient-to-br from-green-100 to-teal-200 text-green-700 dark:from-green-900/40 dark:to-teal-800/40 dark:text-green-300',
+      Rejected: 'bg-gradient-to-br from-red-100 to-rose-200 text-red-700 dark:from-red-900/40 dark:to-rose-800/40 dark:text-red-300',
+      Withdrawn: 'bg-gradient-to-br from-gray-100 to-slate-200 text-gray-700 dark:from-gray-700/40 dark:to-slate-600/40 dark:text-gray-300',
     };
-    return colors[status] || 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 dark:from-gray-700/40 dark:to-gray-600/40 dark:text-gray-300';
+    return colors[status] || 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700 dark:from-gray-700/40 dark:to-gray-600/40 dark:text-gray-300';
   };
 
   const latestRejectedStage = useMemo(() => {
@@ -243,7 +243,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
           {/* Archived Badge */}
           {application.is_archived === 1 && (
             <div className="mb-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-700 dark:text-orange-300 rounded-lg text-xs font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-700 dark:text-orange-300 rounded-lg text-xs font-semibold">
                 <FaArchive className="text-xs" />
                 Archived
               </span>
@@ -253,7 +253,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
           {/* Domain Badge */}
           {application.domain && (
             <div className="mb-3">
-              <span className="inline-block bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full text-xs font-medium">
+              <span className="inline-block bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full text-xs font-medium">
                 {application.domain}
               </span>
             </div>
@@ -319,7 +319,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 {application.tags.slice(0, 2).map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium"
                   >
                     <FaTag className="text-[10px]" />
                     {tag}
@@ -432,7 +432,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                 {application.domain && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">Domain</h3>
-                    <span className="inline-block bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
+                    <span className="inline-block bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium">
                       {application.domain}
                     </span>
                   </div>
@@ -486,7 +486,7 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                     {application.tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium"
                       >
                         <FaTag className="text-xs" />
                         {tag}

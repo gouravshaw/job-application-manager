@@ -49,7 +49,7 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
     setShowAdvanced(false);
   };
 
-  const hasActiveFilters = filters.search || filters.status || filters.domain || 
+  const hasActiveFilters = filters.search || filters.status || filters.domain ||
     filters.workType || filters.tags.length > 0 || filters.includeArchived || filters.rejectionStage;
 
   return (
@@ -82,7 +82,7 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
         </div>
         <button
           onClick={handleSearch}
-          className="px-5 py-2.5 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
+          className="px-5 py-2.5 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all font-medium flex items-center gap-2 shadow-md hover:shadow-lg"
         >
           <FaSearch className="text-sm" />
           Search
@@ -112,11 +112,10 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
         {/* Advanced Filter Toggle */}
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className={`px-4 py-2.5 h-11 rounded-lg flex items-center gap-2 transition-all font-medium shadow-sm ${
-            showAdvanced || hasActiveFilters
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md'
+          className={`px-4 py-2.5 h-11 rounded-lg flex items-center gap-2 transition-all font-medium shadow-sm ${showAdvanced || hasActiveFilters
+              ? 'bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md'
               : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600'
-          }`}
+            }`}
         >
           <FaFilter />
           Filters
@@ -127,7 +126,7 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="px-4 py-2.5 h-11 bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 text-red-700 dark:text-red-300 rounded-lg hover:from-red-200 hover:to-pink-200 dark:hover:from-red-900/40 dark:hover:to-pink-900/40 transition-all flex items-center gap-2 font-medium"
+            className="px-4 py-2.5 h-11 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 text-red-700 dark:text-red-300 rounded-lg hover:from-red-200 hover:to-pink-200 dark:hover:from-red-900/40 dark:hover:to-pink-900/40 transition-all flex items-center gap-2 font-medium"
           >
             <FaTimes />
             Clear
@@ -224,11 +223,10 @@ export const SearchFilterBar = ({ filters, onFilterChange, domains, tags }: Sear
                         : [...filters.tags, tag];
                       handleFilterChange('tags', newTags);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      filters.tags.includes(tag)
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filters.tags.includes(tag)
+                        ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20'
+                      }`}
                   >
                     {tag}
                   </button>
