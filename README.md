@@ -2,6 +2,8 @@
 
 A full-stack web application to track and manage job applications. Built with FastAPI, React, TypeScript, and SQLite.
 
+**Status:** ✅ Production-ready | 🚀 Deployed on AWS EC2
+
 ## Features
 
 ### Core Features
