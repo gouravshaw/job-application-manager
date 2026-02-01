@@ -51,3 +51,4 @@ frontend/dist/
 logs/
 *.log
 
+frontend/.env.production
