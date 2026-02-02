@@ -7,6 +7,7 @@ import { ApplicationForm } from './ApplicationForm';
 import { SearchFilterBar } from './SearchFilterBar';
 import { BulkActionsBar } from './BulkActionsBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { EmptyState } from './EmptyState';
 
 interface ApplicationListProps {
   initialFilter?: { type: string; value: string; timestamp?: number } | null;
@@ -366,14 +367,29 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       ) : applications.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 p-12 rounded-lg shadow-md text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            No applications yet. Click 'Add Application' to get started!
-          </p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-            Press <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">N</kbd> to quickly add a new application
-          </p>
-        </div>
+        <EmptyState
+          variant={filters.search || filters.status || filters.domain || filters.workType || filters.tags.length > 0 ? 'no-filtered-results' : 'no-applications'}
+          action={{
+            label: filters.search || filters.status || filters.domain || filters.workType || filters.tags.length > 0 ? 'Clear Filters' : 'Add Your First Application',
+            onClick: () => {
+              if (filters.search || filters.status || filters.domain || filters.workType || filters.tags.length > 0) {
+                setFilters({
+                  search: '',
+                  status: '',
+                  domain: '',
+                  workType: '',
+                  tags: [],
+                  includeArchived: false,
+                  sortBy: 'created_at',
+                  sortOrder: 'desc',
+                  rejectionStage: '',
+                });
+              } else {
+                setShowForm(true);
+              }
+            }
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {applications.map(app => (

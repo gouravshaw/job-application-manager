@@ -3,6 +3,7 @@ import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCir
 import { ApplicationStats } from '../types';
 import { applicationApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { EmptyState } from './EmptyState';
 
 interface DashboardProps {
   onCardClick?: (filterType: string, filterValue: string) => void;
@@ -102,8 +103,24 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
     );
   }
 
-  if (!stats) {
-    return <div>No data available</div>;
+  if (!stats || stats.total_applications === 0) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Dashboard</h2>
+            <p className="text-gray-600 dark:text-gray-400">Track your job application progress</p>
+          </div>
+        </div>
+        <EmptyState
+          variant="no-applications"
+          action={{
+            label: 'Add Your First Application',
+            onClick: () => window.location.href = '?tab=applications'
+          }}
+        />
+      </div>
+    );
   }
 
   const totalRejections = Object.values(stats.rejections_by_stage || {}).reduce((sum, count) => sum + count, 0);

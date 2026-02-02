@@ -6,6 +6,7 @@ import { applicationApi } from '../services/api';
 import { TimelineView, TimelineStats } from './TimelineView';
 import { ApplicationForm } from './ApplicationForm';
 import { useToast } from '../context/ToastContext';
+import { StatusProgressBar } from './StatusProgressBar';
 
 interface ApplicationCardProps {
   application: JobApplication;
@@ -619,6 +620,14 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                       View Job Posting
                     </a>
                   )}
+                </div>
+              </div>
+
+              {/* Status Progress */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Application Progress</h3>
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl">
+                  <StatusProgressBar currentStatus={application.status} />
                 </div>
               </div>
 
