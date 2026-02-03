@@ -108,6 +108,22 @@ def migrate_database():
         print("STATUS: applied_on column added")
     else:
         print("STATUS: applied_on column already exists")
+
+    # Add networking_contacts column if it doesn't exist
+    if 'networking_contacts' not in columns:
+        print("Adding networking_contacts column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN networking_contacts JSON')
+        print("STATUS: networking_contacts column added")
+    else:
+        print("STATUS: networking_contacts column already exists")
+
+    # Add contact_linkedin column if it doesn't exist
+    if 'contact_linkedin' not in columns:
+        print("Adding contact_linkedin column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_linkedin TEXT')
+        print("STATUS: contact_linkedin column added")
+    else:
+        print("STATUS: contact_linkedin column already exists")
     
     conn.commit()
     conn.close()
