@@ -93,6 +93,21 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
     return undefined;
   }, [application.status_history]);
 
+  const networkingContacts = useMemo(() => {
+    if (Array.isArray(application.networking_contacts)) {
+      return application.networking_contacts;
+    }
+    if (typeof application.networking_contacts === 'string') {
+      try {
+        return JSON.parse(application.networking_contacts as unknown as string);
+      } catch (e) {
+        console.error("Failed to parse networking_contacts", e);
+        return [];
+      }
+    }
+    return [];
+  }, [application.networking_contacts]);
+
   const getStatusBorderColor = (status: string) => {
     const colors: { [key: string]: string } = {
       Saved: '#9ca3af',
@@ -514,11 +529,11 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
               )}
 
               {/* Networking Contacts */}
-              {application.networking_contacts && application.networking_contacts.length > 0 && (
+              {networkingContacts && networkingContacts.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Networking Contacts</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {application.networking_contacts.map((contact, index) => (
+                    {networkingContacts.map((contact: any, index: number) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <FaLinkedin className="text-blue-600 text-xl flex-shrink-0" />
                         <div className="overflow-hidden">

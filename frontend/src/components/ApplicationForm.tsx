@@ -33,7 +33,11 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     interview_questions: initialData?.interview_questions || '',
     interview_date: initialData?.interview_date ? new Date(initialData.interview_date).toISOString().slice(0, 16) : '',
     contact_linkedin: initialData?.contact_linkedin || '',
-    networking_contacts: initialData?.networking_contacts || [],
+    networking_contacts: Array.isArray(initialData?.networking_contacts)
+      ? initialData.networking_contacts
+      : (typeof initialData?.networking_contacts === 'string'
+        ? JSON.parse(initialData.networking_contacts as unknown as string)
+        : []),
   });
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
@@ -150,7 +154,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       };
       setFormData(prev => ({
         ...prev,
-        networking_contacts: [...(prev.networking_contacts || []), newContact]
+        networking_contacts: [...(Array.isArray(prev.networking_contacts) ? prev.networking_contacts : []), newContact]
       }));
       setNewContactName('');
       setNewContactLinkedin('');
