@@ -34,6 +34,8 @@ A full-stack web application to track and manage job applications. Built with Fa
 - **Excel Export** - Download all data in Excel format
 - **In-App Backup & Restore** - One-click database backup/restore directly from the Dashboard
 - **Interview Result Awaited Status** - Distinct status to track applications awaiting post-interview feedback
+- **Networking & Contacts** - Track networking contacts at companies with LinkedIn integration
+- **Enhanced Platform Tracking** - Track exactly where you applied with custom platform support
 
 ## Quick Start
 
@@ -160,21 +162,27 @@ chmod +x start_docker.sh
 - **Can Proceed**: You can dismiss the warning and proceed if it's a different role
 - **Prevents Mistakes**: Helps avoid accidentally applying twice
 
-### 8. Dark Mode
+### 8. Networking & Contacts
+- **Contact Person LinkedIn**: Directly link to the recruiter or hiring manager's LinkedIn profile
+- **Networking Contacts**: Add multiple contacts (referrers, future colleagues) for each company
+- **LinkedIn Integration**: Quick access to profiles with one click
+- **Visual Cards**: Networking contacts appear as cards in the application details
+
+### 9. Dark Mode
 - **Toggle**: Sun/Moon icon in the side menu
 - **Persistent**: Your choice is saved and remembered
 - **Full Support**: Every component supports dark mode
 - **Smooth Transition**: Animated color transitions
 - **Eye-friendly**: Reduces eye strain for night usage
 
-### 9. Keyboard Shortcuts
+### 10. Keyboard Shortcuts
 - **`N`** - Open "Add New Application" form
 - **`/`** - Focus the search bar
 - **`Esc`** - Close modals or clear selections
 - **Help**: Keyboard shortcut guide visible in bottom-right (hidden on mobile)
 - **Fast Workflow**: Navigate without touching your mouse
 
-### 10. Mobile Responsiveness
+### 11. Mobile Responsiveness
 - **Touch-friendly**: All buttons and inputs sized for touch
 - **Responsive Layout**: Adapts to any screen size
 - **Fullscreen Modals**: Forms take full screen on mobile for better experience
