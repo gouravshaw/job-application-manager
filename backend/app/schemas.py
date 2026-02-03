@@ -22,7 +22,10 @@ class JobApplicationBase(BaseModel):
     application_deadline: Optional[datetime] = None
     applied_on: Optional[str] = None
     contact_person: Optional[str] = None
+    contact_person: Optional[str] = None
     contact_email: Optional[str] = None
+    contact_linkedin: Optional[str] = None
+    networking_contacts: Optional[List[Dict]] = []
     references: Optional[str] = None
     job_description: Optional[str] = None
     notes: Optional[str] = None
@@ -52,7 +55,10 @@ class JobApplicationUpdate(BaseModel):
     application_deadline: Optional[datetime] = None
     applied_on: Optional[str] = None
     contact_person: Optional[str] = None
+    contact_person: Optional[str] = None
     contact_email: Optional[str] = None
+    contact_linkedin: Optional[str] = None
+    networking_contacts: Optional[List[Dict]] = None
     references: Optional[str] = None
     job_description: Optional[str] = None
     notes: Optional[str] = None

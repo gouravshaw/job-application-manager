@@ -5,6 +5,11 @@ export interface StatusHistoryEntry {
   stage?: string;
 }
 
+export interface NetworkingContact {
+  name: string;
+  linkedin: string;
+}
+
 export interface JobApplication {
   id: number;
   company_name: string;
@@ -34,6 +39,8 @@ export interface JobApplication {
   interview_notes?: string;
   interview_questions?: string;
   interview_date?: string;
+  contact_linkedin?: string;
+  networking_contacts?: NetworkingContact[];
   created_at: string;
   updated_at?: string;
 }
@@ -61,6 +68,8 @@ export interface JobApplicationCreate {
   interview_notes?: string;
   interview_questions?: string;
   interview_date?: string;
+  contact_linkedin?: string;
+  networking_contacts?: NetworkingContact[];
   status_stage?: string;
 }
 
@@ -105,6 +114,7 @@ export const APPLIED_ON_OPTIONS = [
   "ZipRecruiter",
   "Referral",
   "Email",
+  "Total Jobs",
   "Other"
 ];
 

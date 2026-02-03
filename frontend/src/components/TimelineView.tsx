@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { JobApplication } from '../types';
 import { FaCircle, FaCheckCircle, FaTimesCircle, FaHourglass } from 'react-icons/fa';
 

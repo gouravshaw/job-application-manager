@@ -114,7 +114,12 @@
   }
 
   .glass-card {
-    @apply bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0, 0, 0, 0.04)] hover:shadow-[0_4px_12px_rgba(0, 0, 0, 0.08)] hover:-translate-y-0.5 transition-all duration-300;
+    @apply bg-white border border-gray-100 hover:-translate-y-0.5 transition-all duration-300;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .glass-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   /* Dark Mode Glass - Overrides */

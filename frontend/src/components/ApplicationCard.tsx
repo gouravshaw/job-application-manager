@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight } from 'react-icons/fa';
+import { FaBuilding, FaMapMarkerAlt, FaMoneyBillWave, FaTrash, FaEdit, FaFilePdf, FaExternalLinkAlt, FaClock, FaHistory, FaArchive, FaCheckCircle, FaTimes, FaTag, FaArrowRight, FaLinkedin, FaEnvelope, FaUser } from 'react-icons/fa';
 import { JobApplication } from '../types';
 import { applicationApi } from '../services/api';
 
@@ -478,6 +478,65 @@ export const ApplicationCard = ({ application, onUpdate, isSelected = false, onC
                   </div>
                 </div>
               </div>
+
+              {/* Contact Information */}
+              {(application.contact_person || application.contact_email || application.contact_linkedin) && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Contact Information</h3>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2">
+                    {application.contact_person && (
+                      <div className="flex items-center gap-2 text-gray-900 dark:text-white">
+                        <FaUser className="text-gray-400" />
+                        <span className="font-medium">{application.contact_person}</span>
+                        {application.contact_linkedin && (
+                          <a
+                            href={application.contact_linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 ml-2"
+                            title="LinkedIn Profile"
+                          >
+                            <FaLinkedin className="text-lg" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    {application.contact_email && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <FaEnvelope className="text-gray-400" />
+                        <a href={`mailto:${application.contact_email}`} className="hover:underline">
+                          {application.contact_email}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Networking Contacts */}
+              {application.networking_contacts && application.networking_contacts.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Networking Contacts</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {application.networking_contacts.map((contact, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <FaLinkedin className="text-blue-600 text-xl flex-shrink-0" />
+                        <div className="overflow-hidden">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{contact.name}</p>
+                          <a
+                            href={contact.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-500 hover:underline truncate block"
+                          >
+                            View Profile
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Tags */}
               {application.tags && application.tags.length > 0 && (

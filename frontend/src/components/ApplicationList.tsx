@@ -21,7 +21,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
   const [domains, setDomains] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  // const searchInputRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<FilterState>(() => {
     const defaultFilters = {
       search: '',
@@ -31,7 +31,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
       tags: [],
       includeArchived: false,
       sortBy: 'created_at',
-      sortOrder: 'desc',
+      sortOrder: 'desc' as 'asc' | 'desc',
       rejectionStage: '',
     };
 

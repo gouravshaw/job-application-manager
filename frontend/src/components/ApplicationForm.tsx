@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS } from '../types';
+import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS, NetworkingContact } from '../types';
 import { applicationApi } from '../services/api';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaLinkedin, FaPlus, FaTrash } from 'react-icons/fa';
 import { TagsInput } from './TagsInput';
 
 interface ApplicationFormProps {
@@ -32,6 +32,8 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     interview_notes: initialData?.interview_notes || '',
     interview_questions: initialData?.interview_questions || '',
     interview_date: initialData?.interview_date ? new Date(initialData.interview_date).toISOString().slice(0, 16) : '',
+    contact_linkedin: initialData?.contact_linkedin || '',
+    networking_contacts: initialData?.networking_contacts || [],
   });
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
@@ -39,10 +41,25 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [possibleDuplicates, setPossibleDuplicates] = useState<any[]>([]);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+  const [customAppliedOn, setCustomAppliedOn] = useState('');
+  const [isCustomAppliedOn, setIsCustomAppliedOn] = useState(false);
+
+  // Networking contact state
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactLinkedin, setNewContactLinkedin] = useState('');
 
   useEffect(() => {
     loadTags();
-  }, []);
+
+    // Initialize custom Applied On state
+    if (initialData?.applied_on) {
+      if (!APPLIED_ON_OPTIONS.includes(initialData.applied_on)) {
+        setIsCustomAppliedOn(true);
+        setCustomAppliedOn(initialData.applied_on);
+        setFormData(prev => ({ ...prev, applied_on: 'Other' }));
+      }
+    }
+  }, [initialData]);
 
   useEffect(() => {
     setFormData(prev => {
@@ -106,9 +123,44 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'applied_on') {
+      if (value === 'Other') {
+        setIsCustomAppliedOn(true);
+        setFormData(prev => ({ ...prev, applied_on: 'Other' }));
+      } else {
+        setIsCustomAppliedOn(false);
+        setFormData(prev => ({ ...prev, applied_on: value }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? undefined : value,
+      }));
+    }
+  };
+
+
+
+  const addNetworkingContact = () => {
+    if (newContactName && newContactLinkedin) {
+      const newContact: NetworkingContact = {
+        name: newContactName,
+        linkedin: newContactLinkedin
+      };
+      setFormData(prev => ({
+        ...prev,
+        networking_contacts: [...(prev.networking_contacts || []), newContact]
+      }));
+      setNewContactName('');
+      setNewContactLinkedin('');
+    }
+  };
+
+  const removeNetworkingContact = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value === '' ? undefined : value,
+      networking_contacts: (prev.networking_contacts || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -135,7 +187,14 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       // Add optional fields only if they have values
       if (formData.application_date) cleanedData.application_date = formData.application_date;
       if (formData.application_deadline) cleanedData.application_deadline = formData.application_deadline;
-      if (formData.applied_on) cleanedData.applied_on = formData.applied_on;
+
+      // Handle custom applied on
+      if (formData.applied_on === 'Other' && customAppliedOn) {
+        cleanedData.applied_on = customAppliedOn;
+      } else if (formData.applied_on) {
+        cleanedData.applied_on = formData.applied_on;
+      }
+
       if (formData.job_url) cleanedData.job_url = formData.job_url;
       if (formData.location) cleanedData.location = formData.location;
       if (formData.work_type) cleanedData.work_type = formData.work_type;
@@ -151,7 +210,10 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       if (formData.interview_notes) cleanedData.interview_notes = formData.interview_notes;
       if (formData.interview_questions) cleanedData.interview_questions = formData.interview_questions;
       if (formData.interview_date) cleanedData.interview_date = formData.interview_date;
+      if (formData.interview_date) cleanedData.interview_date = formData.interview_date;
       if (formData.status === 'Rejected' && formData.status_stage) cleanedData.status_stage = formData.status_stage;
+      if (formData.contact_linkedin) cleanedData.contact_linkedin = formData.contact_linkedin;
+      if (formData.networking_contacts && formData.networking_contacts.length > 0) cleanedData.networking_contacts = formData.networking_contacts;
 
       // Create application
       if (isEdit && initialData) {
@@ -405,7 +467,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Applied On (optional)</label>
               <select
                 name="applied_on"
-                value={formData.applied_on || ''}
+                value={formData.applied_on === 'Other' || isCustomAppliedOn ? 'Other' : (formData.applied_on || '')}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               >
@@ -414,6 +476,17 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
+
+              {isCustomAppliedOn && (
+                <input
+                  type="text"
+                  value={customAppliedOn}
+                  onChange={(e) => setCustomAppliedOn(e.target.value)}
+                  className="w-full mt-2 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
+                  placeholder="Enter platform name..."
+                  required={isCustomAppliedOn}
+                />
+              )}
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Where did you apply?</p>
             </div>
 
@@ -454,6 +527,86 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
                 placeholder="contact@company.com"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <div className="flex items-center gap-2">
+                  <FaLinkedin className="text-blue-600" />
+                  Contact Person LinkedIn Profile
+                </div>
+              </label>
+              <input
+                type="url"
+                name="contact_linkedin"
+                value={formData.contact_linkedin || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
+                placeholder="https://linkedin.com/in/..."
+              />
+            </div>
+          </div>
+
+          {/* Networking Contacts */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Networking Contacts
+              <span className="text-xs font-normal text-gray-500 ml-2">(People working at this company)</span>
+            </label>
+
+            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  placeholder="Name"
+                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
+                />
+                <input
+                  type="url"
+                  value={newContactLinkedin}
+                  onChange={(e) => setNewContactLinkedin(e.target.value)}
+                  placeholder="LinkedIn URL"
+                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addNetworkingContact}
+                  disabled={!newContactName || !newContactLinkedin}
+                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaPlus />
+                </button>
+              </div>
+
+              {formData.networking_contacts && formData.networking_contacts.length > 0 && (
+                <div className="space-y-2 mt-3">
+                  {formData.networking_contacts.map((contact, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-600">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FaLinkedin className="text-blue-600 flex-shrink-0" />
+                        <span className="font-medium text-sm text-gray-900 dark:text-white">{contact.name}</span>
+                        <a
+                          href={contact.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-500 hover:underline truncate max-w-[150px]"
+                        >
+                          {contact.linkedin}
+                        </a>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeNetworkingContact(index)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                      >
+                        <FaTrash className="text-sm" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -594,8 +747,8 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

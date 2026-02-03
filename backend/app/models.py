@@ -29,6 +29,10 @@ class JobApplication(Base):
     
     contact_person = Column(String)
     contact_email = Column(String)
+    contact_linkedin = Column(String)  # LinkedIn profile URL for contact person
+    
+    networking_contacts = Column(JSON, default=list)  # List of {name, linkedin_url}
+    
     references = Column(Text)  # References information
     job_description = Column(Text)  # Full job description
     
