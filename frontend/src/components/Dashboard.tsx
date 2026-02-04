@@ -49,9 +49,10 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
       // Set flag for success message after reload
       sessionStorage.setItem('restoreSuccess', 'true');
       window.location.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to restore database:', error);
-      showToast('Failed to restore database', 'error');
+      const errorMessage = error.response?.data?.detail || 'Failed to restore database';
+      showToast(errorMessage, 'error');
       setIsRestoring(false);
     } finally {
       if (fileInputRef.current) {

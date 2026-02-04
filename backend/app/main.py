@@ -9,8 +9,9 @@ import os
 from datetime import datetime
 import pandas as pd
 from io import BytesIO
+import sqlite3
 
-from . import models, schemas, crud
+from . import models, schemas, crud, migration
 from .database import engine, get_db
 
 # Create database tables
@@ -296,26 +297,79 @@ def backup_database():
 
 @app.post("/api/restore")
 async def restore_database(file: UploadFile = File(...)):
-    """Restore database from uploaded file"""
+    """Restore database from uploaded file with validation"""
     if not file.filename.endswith('.db'):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .db file")
     
     db_path = "job_tracker.db"
+    temp_path = f"temp_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
     backup_path = f"job_tracker.db.bak_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     try:
-        # Create a backup of the current DB just in case
+        # 1. Save uploaded file to a temporary location
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 2. Validate the database file
+        try:
+            conn = sqlite3.connect(temp_path)
+            cursor = conn.cursor()
+            
+            # Check if it's a valid SQLite DB and has the main table
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='job_applications'")
+            if not cursor.fetchone():
+                conn.close()
+                raise ValueError("The uploaded file does not appear to be a valid Job Application Manager database (missing job_applications table).")
+                
+            conn.close()
+            
+        except sqlite3.DatabaseError:
+            raise ValueError("The uploaded file is not a valid SQLite database.")
+            
+        # 3. Create a backup of the current DB just in case
         if os.path.exists(db_path):
             shutil.copy2(db_path, backup_path)
             
-        # Save uploaded file
-        with open(db_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # CRITICAL FIX: Close all database connections before swapping the file
+        # On Linux: Prevents reading from the old 'ghost' file handle
+        # On Windows: Prevents PermissionError because the file is locked
+        engine.dispose()
+            
+        # 4. Apply the new database
+        try:
+            shutil.move(temp_path, db_path)
+        except PermissionError:
+            # Retry mechanism for Windows if file is still briefly locked
+            import time
+            time.sleep(0.5)
+            try:
+                 shutil.move(temp_path, db_path)
+            except Exception as e:
+                # If we can't move it, try copy and delete
+                shutil.copy2(temp_path, db_path)
+                os.remove(temp_path)
+
+        # 5. Run migration to ensure schema compatibility
+        try:
+            print("Running post-restore migration...")
+            migration.migrate_database()
+        except Exception as e:
+            print(f"Post-restore migration failed: {e}")
             
         return {"message": "Database restored successfully. Please refresh the page."}
         
+    except ValueError as e:
+        # Invalid file - clean up temp and return error
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(status_code=400, detail=str(e))
+        
     except Exception as e:
-        # Try to restore from backup if something went wrong
-        if os.path.exists(backup_path):
-            shutil.copy2(backup_path, db_path)
+        # Unexpected error - try to restore from backup
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        if os.path.exists(backup_path) and os.path.exists(db_path):
+            # If we messed up the main DB, try to restore
+             shutil.copy2(backup_path, db_path)
+             
         raise HTTPException(status_code=500, detail=f"Error restoring database: {str(e)}")
