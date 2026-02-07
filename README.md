@@ -63,6 +63,46 @@ chmod +x start_docker.sh
 - **Linux/Mac:** `./stop_docker.sh`
 - **All:** Press `Ctrl+C` in terminal
 
+### Running as a Service (Linux)
+
+You can run the application as a systemd service so it starts automatically on boot and runs in the background.
+
+1. **Edit the service file:**
+   Open `job-manager.service` and update the `WorkingDirectory` path to match your project location:
+   ```ini
+   WorkingDirectory=/path/to/your/Job-Application-Manager
+   ```
+
+2. **Install the service:**
+   ```bash
+   # Copy service file to systemd directory
+   sudo cp job-manager.service /etc/systemd/system/
+
+   # Reload systemd daemon
+   sudo systemctl daemon-reload
+
+   # Enable service to start on boot
+   sudo systemctl enable job-manager.service
+
+   # Start the service
+   sudo systemctl start job-manager.service
+   ```
+
+3. **Manage the service:**
+   ```bash
+   # Check status
+   sudo systemctl status job-manager
+
+   # Stop service
+   sudo systemctl stop job-manager
+
+   # Restart service
+   sudo systemctl restart job-manager
+   
+   # View logs
+   journalctl -u job-manager -f
+   ```
+
 ## Status Options
 
 | Status | Description |
