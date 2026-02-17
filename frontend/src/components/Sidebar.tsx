@@ -10,8 +10,10 @@ interface SidebarProps {
 
 export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: SidebarProps) => {
       const [isOpen, setIsOpen] = useState(false);
+      const [isCollapsed, setIsCollapsed] = useState(false);
 
       const toggleSidebar = () => setIsOpen(!isOpen);
+      const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
       const navItems = [
             { id: 'dashboard', label: 'Dashboard', icon: FaChartBar },
@@ -39,26 +41,30 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                   {/* Sidebar Container */}
                   <aside
                         className={`
-          fixed lg:sticky top-0 left-0 z-40 h-screen w-[280px]
+          fixed lg:sticky top-0 left-0 z-40 h-screen
           bg-white dark:bg-slate-950/90 backdrop-blur-xl
           border-r border-gray-200 dark:border-slate-800
           shadow-xl shadow-blue-500/5 dark:shadow-none
-          transition-transform duration-300 ease-in-out
+          transition-all duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          w-[280px] ${isCollapsed ? 'lg:w-[72px]' : ''}
         `}
                   >
-                        <div className="flex flex-col h-full p-6">
-                              {/* Logo Section */}
-                              <div className="flex items-center gap-3 px-2 mb-10">
-                                    <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20">
+                        <div className={`flex flex-col h-full transition-all duration-300 ${isCollapsed ? 'p-3' : 'p-6'}`}>
+                              {/* Logo Section - rocket icon toggles collapse on desktop */}
+                              <div className={`flex items-center gap-3 px-2 mb-10 ${isCollapsed ? 'justify-center' : ''}`}>
+                                    <button
+                                          onClick={() => window.innerWidth >= 1024 ? toggleCollapse() : toggleSidebar()}
+                                          className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20 hover:opacity-90 transition-opacity"
+                                          title={isCollapsed ? 'Expand menu' : 'Collapse menu'}
+                                    >
                                           <FaRocket className="text-white text-lg" />
-                                    </div>
-                                    <div>
+                                    </button>
+                                    {!isCollapsed && (
                                           <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent leading-tight">
                                                 Job Manager
                                           </h1>
-
-                                    </div>
+                                    )}
                               </div>
 
                               {/* Navigation */}
@@ -70,8 +76,10 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                                                       setActiveTab(item.id);
                                                       setIsOpen(false);
                                                 }}
+                                                title={isCollapsed ? item.label : undefined}
                                                 className={`
-                  w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden
+                  w-full flex items-center rounded-xl transition-all duration-200 group relative overflow-hidden
+                  ${isCollapsed ? 'justify-center px-0 py-3.5' : 'gap-3 px-4 py-3.5'}
                   ${activeTab === item.id
                                                             ? 'text-white shadow-lg shadow-blue-500/25'
                                                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-gray-900 dark:hover:text-white'
@@ -87,19 +95,24 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                                                       className={`relative z-10 text-lg transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-gray-400 group-hover:text-blue-500'
                                                             }`}
                                                 />
-                                                <span className="relative z-10 font-medium tracking-wide">{item.label}</span>
+                                                {!isCollapsed && (
+                                                      <span className="relative z-10 font-medium tracking-wide">{item.label}</span>
+                                                )}
                                           </button>
                                     ))}
                               </nav>
 
                               {/* Bottom Actions */}
-                              <div className="mt-auto px-2 space-y-4">
+                              <div className={`mt-auto space-y-4 ${isCollapsed ? 'px-0' : 'px-2'}`}>
                                     {/* Theme Section */}
-                                    <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/50">
-                                          <div className="flex items-center justify-between">
-                                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
+                                    <div className={`rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/50 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
+                                          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+                                                {!isCollapsed && (
+                                                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
+                                                )}
                                                 <button
                                                       onClick={toggleTheme}
+                                                      title={isCollapsed ? (isDark ? 'Light mode' : 'Dark mode') : undefined}
                                                       className={`
                     p-2 rounded-lg transition-all duration-300
                     ${isDark ? 'bg-slate-700 text-yellow-400' : 'bg-white text-gray-400 shadow-sm'}
@@ -109,8 +122,6 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
                                                 </button>
                                           </div>
                                     </div>
-
-
                               </div>
                         </div>
                   </aside>
