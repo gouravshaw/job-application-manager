@@ -17,6 +17,12 @@ from .database import engine, get_db
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
+# Run migrations to add any new columns to existing databases
+try:
+    migration.migrate_database()
+except Exception as e:
+    print(f"Migration warning: {e}")
+
 app = FastAPI(title="Job Application Manager")
 
 # Add validation exception handler to log errors

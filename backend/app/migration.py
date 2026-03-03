@@ -135,7 +135,47 @@ def migrate_database():
         print("STATUS: contact_linkedin column added")
     else:
         print("STATUS: contact_linkedin column already exists")
-    
+
+    # Add contact_cold_message_sent column if it doesn't exist
+    if 'contact_cold_message_sent' not in columns:
+        print("Adding contact_cold_message_sent column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_cold_message_sent BOOLEAN DEFAULT 0')
+        print("STATUS: contact_cold_message_sent column added")
+    else:
+        print("STATUS: contact_cold_message_sent column already exists")
+
+    # Add contact_cold_message_via column if it doesn't exist
+    if 'contact_cold_message_via' not in columns:
+        print("Adding contact_cold_message_via column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_cold_message_via TEXT')
+        print("STATUS: contact_cold_message_via column added")
+    else:
+        print("STATUS: contact_cold_message_via column already exists")
+
+    # Add contact_cold_contact_category column if it doesn't exist
+    if 'contact_cold_contact_category' not in columns:
+        print("Adding contact_cold_contact_category column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_cold_contact_category TEXT')
+        print("STATUS: contact_cold_contact_category column added")
+    else:
+        print("STATUS: contact_cold_contact_category column already exists")
+
+    # Add contact_cold_contact_email column if it doesn't exist
+    if 'contact_cold_contact_email' not in columns:
+        print("Adding contact_cold_contact_email column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_cold_contact_email TEXT')
+        print("STATUS: contact_cold_contact_email column added")
+    else:
+        print("STATUS: contact_cold_contact_email column already exists")
+
+    # Add contact_cold_message_body column if it doesn't exist
+    if 'contact_cold_message_body' not in columns:
+        print("Adding contact_cold_message_body column...")
+        cursor.execute('ALTER TABLE job_applications ADD COLUMN contact_cold_message_body TEXT')
+        print("STATUS: contact_cold_message_body column added")
+    else:
+        print("STATUS: contact_cold_message_body column already exists")
+
     conn.commit()
     conn.close()
     

@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS, NetworkingContact } from '../types';
+import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS, NetworkingContact, COLD_MESSAGE_VIA_OPTIONS, COLD_CONTACT_CATEGORY_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
 import { FaTimes, FaLinkedin, FaPlus, FaTrash } from 'react-icons/fa';
 import { TagsInput } from './TagsInput';
@@ -33,6 +33,11 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     interview_questions: initialData?.interview_questions || '',
     interview_date: initialData?.interview_date ? new Date(initialData.interview_date).toISOString().slice(0, 16) : '',
     contact_linkedin: initialData?.contact_linkedin || '',
+    contact_cold_message_sent: initialData?.contact_cold_message_sent || false,
+    contact_cold_message_via: initialData?.contact_cold_message_via || '',
+    contact_cold_contact_category: initialData?.contact_cold_contact_category || '',
+    contact_cold_contact_email: initialData?.contact_cold_contact_email || '',
+    contact_cold_message_body: initialData?.contact_cold_message_body || '',
     networking_contacts: Array.isArray(initialData?.networking_contacts)
       ? initialData.networking_contacts
       : (typeof initialData?.networking_contacts === 'string'
@@ -51,6 +56,12 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   // Networking contact state
   const [newContactName, setNewContactName] = useState('');
   const [newContactLinkedin, setNewContactLinkedin] = useState('');
+  const [newColdMessageSent, setNewColdMessageSent] = useState(false);
+  const [newColdMessageVia, setNewColdMessageVia] = useState('');
+  const [newColdContactName, setNewColdContactName] = useState('');
+  const [newColdContactCategory, setNewColdContactCategory] = useState('');
+  const [newColdContactEmail, setNewColdContactEmail] = useState('');
+  const [newColdMessageBody, setNewColdMessageBody] = useState('');
 
   useEffect(() => {
     loadTags();
@@ -150,7 +161,15 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     if (newContactName && newContactLinkedin) {
       const newContact: NetworkingContact = {
         name: newContactName,
-        linkedin: newContactLinkedin
+        linkedin: newContactLinkedin,
+        cold_message_sent: newColdMessageSent,
+        ...(newColdMessageSent && {
+          cold_message_via: newColdMessageVia,
+          cold_contact_name: newColdContactName,
+          cold_contact_category: newColdContactCategory,
+          cold_contact_email: newColdMessageVia === 'Email' ? newColdContactEmail : undefined,
+          cold_message_body: newColdMessageBody,
+        }),
       };
       setFormData(prev => ({
         ...prev,
@@ -158,6 +177,12 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       }));
       setNewContactName('');
       setNewContactLinkedin('');
+      setNewColdMessageSent(false);
+      setNewColdMessageVia('');
+      setNewColdContactName('');
+      setNewColdContactCategory('');
+      setNewColdContactEmail('');
+      setNewColdMessageBody('');
     }
   };
 
@@ -549,6 +574,98 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 placeholder="https://linkedin.com/in/..."
               />
             </div>
+
+            {/* Cold Email/Message — Main Contact Person */}
+            <div className="md:col-span-2">
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cold email / message sent to this contact?</span>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="contact_cold_message_sent"
+                        checked={formData.contact_cold_message_sent === false || !formData.contact_cold_message_sent}
+                        onChange={() => setFormData(prev => ({ ...prev, contact_cold_message_sent: false, contact_cold_message_via: '', contact_cold_contact_category: '', contact_cold_contact_email: '', contact_cold_message_body: '' }))}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">No</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="contact_cold_message_sent"
+                        checked={formData.contact_cold_message_sent === true}
+                        onChange={() => setFormData(prev => ({ ...prev, contact_cold_message_sent: true }))}
+                        className="text-blue-600"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Yes</span>
+                    </label>
+                  </div>
+                </div>
+
+                {formData.contact_cold_message_sent && (
+                  <div className="space-y-3 border-t border-gray-200 dark:border-slate-600 pt-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
+                        <select
+                          name="contact_cold_message_via"
+                          value={formData.contact_cold_message_via || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        >
+                          <option value="">Select...</option>
+                          {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
+                        <select
+                          name="contact_cold_contact_category"
+                          value={formData.contact_cold_contact_category || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        >
+                          <option value="">Select...</option>
+                          {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {formData.contact_cold_message_via === 'Email' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          name="contact_cold_contact_email"
+                          value={formData.contact_cold_contact_email || ''}
+                          onChange={handleInputChange}
+                          placeholder="recipient@company.com"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
+                      <textarea
+                        name="contact_cold_message_body"
+                        value={formData.contact_cold_message_body || ''}
+                        onChange={handleInputChange}
+                        rows={4}
+                        placeholder="Paste the cold email or message you sent..."
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Networking Contacts */}
@@ -582,6 +699,98 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 >
                   <FaPlus />
                 </button>
+              </div>
+
+              {/* Cold Email/Message — Networking Contact */}
+              <div className="border border-gray-200 dark:border-slate-600 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Cold email / message sent?</span>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={!newColdMessageSent}
+                        onChange={() => { setNewColdMessageSent(false); setNewColdMessageVia(''); setNewColdContactName(''); setNewColdContactCategory(''); setNewColdContactEmail(''); setNewColdMessageBody(''); }}
+                        className="text-blue-600"
+                      />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">No</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={newColdMessageSent}
+                        onChange={() => setNewColdMessageSent(true)}
+                        className="text-blue-600"
+                      />
+                      <span className="text-xs text-gray-600 dark:text-gray-400">Yes</span>
+                    </label>
+                  </div>
+                </div>
+
+                {newColdMessageSent && (
+                  <div className="space-y-2 border-t border-gray-200 dark:border-slate-600 pt-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
+                        <select
+                          value={newColdMessageVia}
+                          onChange={(e) => setNewColdMessageVia(e.target.value)}
+                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                        >
+                          <option value="">Select...</option>
+                          {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contact Name</label>
+                        <input
+                          type="text"
+                          value={newColdContactName}
+                          onChange={(e) => setNewColdContactName(e.target.value)}
+                          placeholder="Who you messaged"
+                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
+                      <select
+                        value={newColdContactCategory}
+                        onChange={(e) => setNewColdContactCategory(e.target.value)}
+                        className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                      >
+                        <option value="">Select...</option>
+                        {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {newColdMessageVia === 'Email' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
+                        <input
+                          type="email"
+                          value={newColdContactEmail}
+                          onChange={(e) => setNewColdContactEmail(e.target.value)}
+                          placeholder="recipient@company.com"
+                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
+                      <textarea
+                        value={newColdMessageBody}
+                        onChange={(e) => setNewColdMessageBody(e.target.value)}
+                        rows={3}
+                        placeholder="Paste the cold email or message you sent..."
+                        className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {formData.networking_contacts && formData.networking_contacts.length > 0 && (

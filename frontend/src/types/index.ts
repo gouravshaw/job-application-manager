@@ -8,6 +8,12 @@ export interface StatusHistoryEntry {
 export interface NetworkingContact {
   name: string;
   linkedin: string;
+  cold_message_sent?: boolean;
+  cold_message_via?: string;
+  cold_contact_name?: string;
+  cold_contact_category?: string;
+  cold_contact_email?: string;
+  cold_message_body?: string;
 }
 
 export interface JobApplication {
@@ -40,6 +46,11 @@ export interface JobApplication {
   interview_questions?: string;
   interview_date?: string;
   contact_linkedin?: string;
+  contact_cold_message_sent?: boolean;
+  contact_cold_message_via?: string;
+  contact_cold_contact_category?: string;
+  contact_cold_contact_email?: string;
+  contact_cold_message_body?: string;
   networking_contacts?: NetworkingContact[];
   created_at: string;
   updated_at?: string;
@@ -69,6 +80,11 @@ export interface JobApplicationCreate {
   interview_questions?: string;
   interview_date?: string;
   contact_linkedin?: string;
+  contact_cold_message_sent?: boolean;
+  contact_cold_message_via?: string;
+  contact_cold_contact_category?: string;
+  contact_cold_contact_email?: string;
+  contact_cold_message_body?: string;
   networking_contacts?: NetworkingContact[];
   status_stage?: string;
 }
@@ -117,6 +133,9 @@ export const APPLIED_ON_OPTIONS = [
   "Total Jobs",
   "Other"
 ];
+
+export const COLD_MESSAGE_VIA_OPTIONS = ['Email', 'LinkedIn Message', 'Other'];
+export const COLD_CONTACT_CATEGORY_OPTIONS = ['Employee', 'Hiring Manager', 'Recruiter', 'Other'];
 
 export const REJECTION_STAGE_OPTIONS = [
   "CV Screening",

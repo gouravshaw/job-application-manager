@@ -25,6 +25,11 @@ class JobApplicationBase(BaseModel):
     contact_person: Optional[str] = None
     contact_email: Optional[str] = None
     contact_linkedin: Optional[str] = None
+    contact_cold_message_sent: Optional[bool] = False
+    contact_cold_message_via: Optional[str] = None
+    contact_cold_contact_category: Optional[str] = None
+    contact_cold_contact_email: Optional[str] = None
+    contact_cold_message_body: Optional[str] = None
     networking_contacts: Optional[List[Dict]] = []
     references: Optional[str] = None
     job_description: Optional[str] = None
@@ -58,6 +63,11 @@ class JobApplicationUpdate(BaseModel):
     contact_person: Optional[str] = None
     contact_email: Optional[str] = None
     contact_linkedin: Optional[str] = None
+    contact_cold_message_sent: Optional[bool] = None
+    contact_cold_message_via: Optional[str] = None
+    contact_cold_contact_category: Optional[str] = None
+    contact_cold_contact_email: Optional[str] = None
+    contact_cold_message_body: Optional[str] = None
     networking_contacts: Optional[List[Dict]] = None
     references: Optional[str] = None
     job_description: Optional[str] = None

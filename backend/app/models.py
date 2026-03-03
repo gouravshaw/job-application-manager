@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float, JSON, Boolean
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -30,6 +30,13 @@ class JobApplication(Base):
     contact_person = Column(String)
     contact_email = Column(String)
     contact_linkedin = Column(String)  # LinkedIn profile URL for contact person
+
+    # Cold outreach fields for the main contact person
+    contact_cold_message_sent = Column(Boolean, default=False)
+    contact_cold_message_via = Column(String, nullable=True)  # 'Email', 'LinkedIn Message', 'Other'
+    contact_cold_contact_category = Column(String, nullable=True)  # 'Employee', 'Hiring Manager', 'Recruiter', 'Other'
+    contact_cold_contact_email = Column(String, nullable=True)
+    contact_cold_message_body = Column(Text, nullable=True)
     
     networking_contacts = Column(JSON, default=list)  # List of {name, linkedin_url}
     
