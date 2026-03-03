@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCircle, FaCloudDownloadAlt, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaBriefcase, FaCheckCircle, FaClock, FaChartPie, FaDownload, FaTimesCircle, FaCloudDownloadAlt, FaCloudUploadAlt, FaExclamationTriangle, FaPlus, FaMinus, FaEquals } from 'react-icons/fa';
 import { ApplicationStats } from '../types';
-import { applicationApi } from '../services/api';
+import { applicationApi, RestorePreview } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { EmptyState } from './EmptyState';
 
@@ -17,21 +17,13 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
   // Backup & Restore
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [previewData, setPreviewData] = useState<RestorePreview | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    // Check for successful restore after reload
-    if (sessionStorage.getItem('restoreSuccess') === 'true') {
-      showToast('Database restored successfully!', 'success');
-      sessionStorage.removeItem('restoreSuccess');
-    }
-    loadStats();
-  }, []);
-
   const handleRestoreClick = () => {
-    if (window.confirm('WARNING: Restoring a database will OVERWRITE all current data. This action cannot be undone. Are you sure?')) {
-      fileInputRef.current?.click();
-    }
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,23 +35,51 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
       return;
     }
 
+    // Reset the input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    try {
+      setIsPreviewing(true);
+      setPendingFile(file);
+      const preview = await applicationApi.previewRestore(file);
+      setPreviewData(preview);
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Failed to read backup file';
+      showToast(msg, 'error');
+      setPendingFile(null);
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!pendingFile) return;
     try {
       setIsRestoring(true);
-      await applicationApi.restore(file);
-      // Set flag for success message after reload
+      await applicationApi.restore(pendingFile);
       sessionStorage.setItem('restoreSuccess', 'true');
       window.location.reload();
     } catch (error: any) {
-      console.error('Failed to restore database:', error);
       const errorMessage = error.response?.data?.detail || 'Failed to restore database';
       showToast(errorMessage, 'error');
       setIsRestoring(false);
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setPreviewData(null);
+      setPendingFile(null);
     }
   };
+
+  const handleCancelRestore = () => {
+    setPreviewData(null);
+    setPendingFile(null);
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem('restoreSuccess') === 'true') {
+      showToast('Database restored successfully!', 'success');
+      sessionStorage.removeItem('restoreSuccess');
+    }
+    loadStats();
+  }, []);
 
   const loadStats = async () => {
     try {
@@ -150,6 +170,130 @@ export const Dashboard = ({ onCardClick }: DashboardProps) => {
         accept=".db"
         className="hidden"
       />
+
+      {/* Restore Preview Modal */}
+      {(previewData || isPreviewing) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 p-6 border-b border-gray-200 dark:border-slate-700">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/40 rounded-lg">
+                <FaExclamationTriangle className="text-amber-500 text-lg" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Restore Preview</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {pendingFile?.name}
+                </p>
+              </div>
+            </div>
+
+            {isPreviewing ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-500 dark:text-gray-400">Comparing backup with current database...</p>
+              </div>
+            ) : previewData && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <FaPlus className="text-green-500 mb-1" />
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">{previewData.to_add}</span>
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium mt-0.5">Will be added back</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <FaMinus className="text-red-500 mb-1" />
+                    <span className="text-2xl font-bold text-red-600 dark:text-red-400">{previewData.to_remove}</span>
+                    <span className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">Will be removed</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-slate-600">
+                    <FaEquals className="text-gray-400 mb-1" />
+                    <span className="text-2xl font-bold text-gray-600 dark:text-gray-300">{previewData.unchanged}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Unchanged</span>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                  Current DB: <strong className="text-gray-700 dark:text-gray-200">{previewData.current_count}</strong> applications &rarr; Backup: <strong className="text-gray-700 dark:text-gray-200">{previewData.backup_count}</strong> applications
+                </p>
+
+                {/* Applications to remove */}
+                {previewData.removed_items.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-1.5">
+                      <FaMinus className="text-xs" /> Applications that will be removed ({previewData.removed_items.length})
+                    </h3>
+                    <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                      {previewData.removed_items.map(item => (
+                        <div key={item.id} className="flex items-center justify-between px-3 py-2 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+                          <div>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{item.company_name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{item.job_title}</span>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300">{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Applications to add back */}
+                {previewData.added_items.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2 flex items-center gap-1.5">
+                      <FaPlus className="text-xs" /> Applications that will be restored ({previewData.added_items.length})
+                    </h3>
+                    <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                      {previewData.added_items.map(item => (
+                        <div key={item.id} className="flex items-center justify-between px-3 py-2 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30">
+                          <div>
+                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{item.company_name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{item.job_title}</span>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-300">{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {previewData.to_add === 0 && previewData.to_remove === 0 && (
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                    ✅ This backup is identical to your current database. No changes will be made.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            {!isPreviewing && (
+              <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-slate-700 gap-3">
+                <p className="text-xs text-gray-400 dark:text-gray-500">⚠️ This action cannot be undone</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancelRestore}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmRestore}
+                    disabled={isRestoring}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    {isRestoring ? (
+                      <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Restoring...</>
+                    ) : (
+                      <><FaCloudUploadAlt /> Confirm Restore</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">

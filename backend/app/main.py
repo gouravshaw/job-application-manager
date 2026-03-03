@@ -301,7 +301,92 @@ def backup_database():
         media_type="application/octet-stream"
     )
 
+@app.post("/api/restore/preview")
+async def preview_restore(file: UploadFile = File(...)):
+    """Compare a backup .db file against the current database and return a diff summary."""
+    import tempfile, os as _os
+
+    if not file.filename.endswith('.db'):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .db file")
+
+    # Save uploaded file to a temp location
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        tmp_path = tmp.name
+        shutil.copyfileobj(file.file, tmp)
+
+    try:
+        # Validate the backup file
+        try:
+            backup_conn = sqlite3.connect(f"file:{tmp_path}?mode=ro", uri=True)
+            cursor = backup_conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='job_applications'")
+            if not cursor.fetchone():
+                raise ValueError("Not a valid Job Application Manager database (missing job_applications table).")
+        except sqlite3.DatabaseError:
+            raise ValueError("The uploaded file is not a valid SQLite database.")
+
+        # Read backup applications
+        cursor.execute("""
+            SELECT id, company_name, job_title, status, application_date
+            FROM job_applications
+        """)
+        backup_rows = cursor.fetchall()
+        backup_conn.close()
+
+        # Read current applications
+        current_db_path = "job_tracker.db"
+        current_conn = sqlite3.connect(f"file:{current_db_path}?mode=ro", uri=True)
+        cur2 = current_conn.cursor()
+        cur2.execute("""
+            SELECT id, company_name, job_title, status, application_date
+            FROM job_applications
+        """)
+        current_rows = cur2.fetchall()
+        current_conn.close()
+
+        # Build lookup sets by id
+        backup_by_id = {row[0]: row for row in backup_rows}
+        current_by_id = {row[0]: row for row in current_rows}
+
+        backup_ids = set(backup_by_id.keys())
+        current_ids = set(current_by_id.keys())
+
+        # Applications in backup but not in current = will be "added back"
+        added_ids = backup_ids - current_ids
+        # Applications in current but not in backup = will be removed
+        removed_ids = current_ids - backup_ids
+        # Applications in both
+        unchanged_ids = backup_ids & current_ids
+
+        def row_to_dict(row):
+            return {
+                "id": row[0],
+                "company_name": row[1],
+                "job_title": row[2],
+                "status": row[3],
+                "application_date": row[4],
+            }
+
+        return {
+            "current_count": len(current_rows),
+            "backup_count": len(backup_rows),
+            "to_add": len(added_ids),
+            "to_remove": len(removed_ids),
+            "unchanged": len(unchanged_ids),
+            "added_items": [row_to_dict(backup_by_id[i]) for i in sorted(added_ids)],
+            "removed_items": [row_to_dict(current_by_id[i]) for i in sorted(removed_ids)],
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Preview failed: {str(e)}")
+    finally:
+        _os.unlink(tmp_path)
+
+
 @app.post("/api/restore")
+
 async def restore_database(file: UploadFile = File(...)):
     """Restore database from uploaded file with validation"""
     if not file.filename.endswith('.db'):

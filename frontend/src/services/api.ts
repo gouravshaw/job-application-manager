@@ -1,6 +1,17 @@
 import axios from 'axios';
 import { JobApplication, JobApplicationCreate, ApplicationStats } from '../types';
 
+export interface RestorePreview {
+  current_count: number;
+  backup_count: number;
+  to_add: number;
+  to_remove: number;
+  unchanged: number;
+  added_items: { id: number; company_name: string; job_title: string; status: string; application_date: string | null }[];
+  removed_items: { id: number; company_name: string; job_title: string; status: string; application_date: string | null }[];
+}
+
+
 const API_BASE_URL = 'http://localhost:8000';
 
 const api = axios.create({
@@ -153,13 +164,20 @@ export const applicationApi = {
     window.open(`${API_BASE_URL}/api/backup`, '_blank');
   },
 
+  previewRestore: async (file: File): Promise<RestorePreview> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/api/restore/preview', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   restore: async (file: File): Promise<void> => {
     const formData = new FormData();
     formData.append('file', file);
     await api.post('/api/restore', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 };
