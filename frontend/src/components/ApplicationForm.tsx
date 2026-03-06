@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS, NetworkingContact, COLD_MESSAGE_VIA_OPTIONS, COLD_CONTACT_CATEGORY_OPTIONS } from '../types';
 import { applicationApi } from '../services/api';
-import { FaTimes, FaLinkedin, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaLinkedin, FaPlus, FaTrash, FaEnvelope, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { TagsInput } from './TagsInput';
 
 interface ApplicationFormProps {
@@ -36,7 +36,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     contact_cold_message_sent: initialData?.contact_cold_message_sent || false,
     contact_cold_message_via: initialData?.contact_cold_message_via || '',
     contact_cold_contact_category: initialData?.contact_cold_contact_category || '',
-    contact_cold_contact_email: initialData?.contact_cold_contact_email || '',
+    contact_cold_contact_emails: initialData?.contact_cold_contact_emails || [],
     contact_cold_message_body: initialData?.contact_cold_message_body || '',
     networking_contacts: Array.isArray(initialData?.networking_contacts)
       ? initialData.networking_contacts
@@ -53,14 +53,21 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   const [customAppliedOn, setCustomAppliedOn] = useState('');
   const [isCustomAppliedOn, setIsCustomAppliedOn] = useState(false);
 
+  // Cold email — main contact — multi-email state
+  const [contactEmailInput, setContactEmailInput] = useState('');
+  const [showContactColdDetails, setShowContactColdDetails] = useState(false);
+
   // Networking contact state
   const [newContactName, setNewContactName] = useState('');
   const [newContactLinkedin, setNewContactLinkedin] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
   const [newColdMessageSent, setNewColdMessageSent] = useState(false);
+  const [showNetColdDetails, setShowNetColdDetails] = useState(false);
   const [newColdMessageVia, setNewColdMessageVia] = useState('');
   const [newColdContactName, setNewColdContactName] = useState('');
   const [newColdContactCategory, setNewColdContactCategory] = useState('');
-  const [newColdContactEmail, setNewColdContactEmail] = useState('');
+  const [newColdContactEmails, setNewColdContactEmails] = useState<string[]>([]);
+  const [newColdEmailInput, setNewColdEmailInput] = useState('');
   const [newColdMessageBody, setNewColdMessageBody] = useState('');
 
   useEffect(() => {
@@ -162,12 +169,13 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       const newContact: NetworkingContact = {
         name: newContactName,
         linkedin: newContactLinkedin,
+        email: newContactEmail || undefined,
         cold_message_sent: newColdMessageSent,
         ...(newColdMessageSent && {
           cold_message_via: newColdMessageVia,
           cold_contact_name: newColdContactName,
           cold_contact_category: newColdContactCategory,
-          cold_contact_email: newColdMessageVia === 'Email' ? newColdContactEmail : undefined,
+          cold_contact_emails: newColdMessageVia === 'Email' ? newColdContactEmails : undefined,
           cold_message_body: newColdMessageBody,
         }),
       };
@@ -177,12 +185,16 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
       }));
       setNewContactName('');
       setNewContactLinkedin('');
+      setNewContactEmail('');
       setNewColdMessageSent(false);
+      setShowNetColdDetails(false);
       setNewColdMessageVia('');
       setNewColdContactName('');
       setNewColdContactCategory('');
-      setNewColdContactEmail('');
+      setNewColdContactEmails([]);
+      setNewColdEmailInput('');
       setNewColdMessageBody('');
+
     }
   };
 
@@ -577,94 +589,142 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
 
             {/* Cold Email/Message — Main Contact Person */}
             <div className="md:col-span-2">
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-slate-600">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cold email / message sent to this contact?</span>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="contact_cold_message_sent"
-                        checked={formData.contact_cold_message_sent === false || !formData.contact_cold_message_sent}
-                        onChange={() => setFormData(prev => ({ ...prev, contact_cold_message_sent: false, contact_cold_message_via: '', contact_cold_contact_category: '', contact_cold_contact_email: '', contact_cold_message_body: '' }))}
-                        className="text-blue-600"
-                      />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">No</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="contact_cold_message_sent"
-                        checked={formData.contact_cold_message_sent === true}
-                        onChange={() => setFormData(prev => ({ ...prev, contact_cold_message_sent: true }))}
-                        className="text-blue-600"
-                      />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Yes</span>
-                    </label>
-                  </div>
-                </div>
+              {/* Toggle button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !formData.contact_cold_message_sent;
+                  setFormData(prev => ({
+                    ...prev,
+                    contact_cold_message_sent: next,
+                    ...(next ? {} : { contact_cold_message_via: '', contact_cold_contact_category: '', contact_cold_contact_emails: [], contact_cold_message_body: '' })
+                  }));
+                  setContactEmailInput('');
+                  if (!formData.contact_cold_message_sent) setShowContactColdDetails(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${formData.contact_cold_message_sent
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                  : 'bg-gray-50 dark:bg-slate-700/40 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-700'
+                  }`}
+              >
+                <span className="flex items-center gap-2">
+                  <FaEnvelope className={formData.contact_cold_message_sent ? 'text-indigo-500' : 'text-gray-400'} />
+                  Cold email / message sent to this contact?
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${formData.contact_cold_message_sent
+                  ? 'bg-indigo-100 dark:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300'
+                  : 'bg-gray-100 dark:bg-slate-600 text-gray-500 dark:text-gray-400'
+                  }`}>
+                  {formData.contact_cold_message_sent ? 'Yes' : 'No'}
+                </span>
+              </button>
 
-                {formData.contact_cold_message_sent && (
-                  <div className="space-y-3 border-t border-gray-200 dark:border-slate-600 pt-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
-                        <select
-                          name="contact_cold_message_via"
-                          value={formData.contact_cold_message_via || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
-                        >
-                          <option value="">Select...</option>
-                          {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
-                        <select
-                          name="contact_cold_contact_category"
-                          value={formData.contact_cold_contact_category || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
-                        >
-                          <option value="">Select...</option>
-                          {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+              {formData.contact_cold_message_sent && (
+                <div className="mt-2 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/50 rounded-lg overflow-hidden">
+                  {/* Summary row + expand toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowContactColdDetails(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/20 transition-colors"
+                  >
+                    <span>Fill in details (via, category, email addresses, message body)</span>
+                    {showContactColdDetails ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
+                  </button>
 
-                    {formData.contact_cold_message_via === 'Email' && (
+                  {showContactColdDetails && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-indigo-200 dark:border-indigo-800/50 pt-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
+                          <select
+                            name="contact_cold_message_via"
+                            value={formData.contact_cold_message_via || ''}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                          >
+                            <option value="">Select...</option>
+                            {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contact Category</label>
+                          <select
+                            name="contact_cold_contact_category"
+                            value={formData.contact_cold_contact_category || ''}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                          >
+                            <option value="">Select...</option>
+                            {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {formData.contact_cold_message_via === 'Email' && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Recipient Email Address(es)</label>
+                          {/* Pill list */}
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {(formData.contact_cold_contact_emails || []).map((em, i) => (
+                              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs rounded-full">
+                                {em}
+                                <button type="button" onClick={() => setFormData(prev => ({ ...prev, contact_cold_contact_emails: (prev.contact_cold_contact_emails || []).filter((_, j) => j !== i) }))} className="hover:text-red-500">
+                                  <FaTimes className="text-[10px]" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="email"
+                              value={contactEmailInput}
+                              onChange={e => setContactEmailInput(e.target.value)}
+                              onKeyDown={e => {
+                                if ((e.key === 'Enter' || e.key === ',') && contactEmailInput.trim()) {
+                                  e.preventDefault();
+                                  setFormData(prev => ({ ...prev, contact_cold_contact_emails: [...(prev.contact_cold_contact_emails || []), contactEmailInput.trim()] }));
+                                  setContactEmailInput('');
+                                }
+                              }}
+                              placeholder="Type email and press Enter"
+                              className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (contactEmailInput.trim()) {
+                                  setFormData(prev => ({ ...prev, contact_cold_contact_emails: [...(prev.contact_cold_contact_emails || []), contactEmailInput.trim()] }));
+                                  setContactEmailInput('');
+                                }
+                              }}
+                              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm"
+                            >
+                              <FaPlus />
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">Press Enter or comma to add each address</p>
+                        </div>
+                      )}
+
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
-                        <input
-                          type="email"
-                          name="contact_cold_contact_email"
-                          value={formData.contact_cold_contact_email || ''}
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
+                        <textarea
+                          name="contact_cold_message_body"
+                          value={formData.contact_cold_message_body || ''}
                           onChange={handleInputChange}
-                          placeholder="recipient@company.com"
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+                          rows={4}
+                          placeholder="Paste the cold email or message you sent..."
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono"
                         />
                       </div>
-                    )}
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
-                      <textarea
-                        name="contact_cold_message_body"
-                        value={formData.contact_cold_message_body || ''}
-                        onChange={handleInputChange}
-                        rows={4}
-                        placeholder="Paste the cold email or message you sent..."
-                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-mono"
-                      />
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -676,151 +736,203 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
             </label>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-3">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newContactName}
-                  onChange={(e) => setNewContactName(e.target.value)}
-                  placeholder="Name"
-                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
-                />
-                <input
-                  type="url"
-                  value={newContactLinkedin}
-                  onChange={(e) => setNewContactLinkedin(e.target.value)}
-                  placeholder="LinkedIn URL"
-                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={addNetworkingContact}
-                  disabled={!newContactName || !newContactLinkedin}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FaPlus />
-                </button>
+              {/* Name + LinkedIn + Email row */}
+              <div className="grid grid-cols-1 gap-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                    placeholder="Name"
+                    className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
+                  />
+                  <input
+                    type="url"
+                    value={newContactLinkedin}
+                    onChange={(e) => setNewContactLinkedin(e.target.value)}
+                    placeholder="LinkedIn URL"
+                    className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
+                  />
+                </div>
+                <div className="flex gap-2 items-center">
+                  <FaEnvelope className="text-gray-400 text-sm flex-shrink-0" />
+                  <input
+                    type="email"
+                    value={newContactEmail}
+                    onChange={(e) => setNewContactEmail(e.target.value)}
+                    placeholder="Contact's email address (optional)"
+                    className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm"
+                  />
+                </div>
               </div>
 
-              {/* Cold Email/Message — Networking Contact */}
-              <div className="border border-gray-200 dark:border-slate-600 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Cold email / message sent?</span>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={!newColdMessageSent}
-                        onChange={() => { setNewColdMessageSent(false); setNewColdMessageVia(''); setNewColdContactName(''); setNewColdContactCategory(''); setNewColdContactEmail(''); setNewColdMessageBody(''); }}
-                        className="text-blue-600"
-                      />
-                      <span className="text-xs text-gray-600 dark:text-gray-400">No</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={newColdMessageSent}
-                        onChange={() => setNewColdMessageSent(true)}
-                        className="text-blue-600"
-                      />
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Yes</span>
-                    </label>
-                  </div>
-                </div>
+              {/* Cold message toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !newColdMessageSent;
+                  setNewColdMessageSent(next);
+                  if (!next) { setNewColdMessageVia(''); setNewColdContactName(''); setNewColdContactCategory(''); setNewColdContactEmails([]); setNewColdEmailInput(''); setNewColdMessageBody(''); setShowNetColdDetails(false); }
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${newColdMessageSent
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-500 dark:text-gray-400 hover:border-indigo-300'
+                  }`}
+              >
+                <span className="flex items-center gap-2">
+                  <FaEnvelope className={newColdMessageSent ? 'text-indigo-500' : 'text-gray-400'} />
+                  Cold email / message sent to this contact?
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${newColdMessageSent ? 'bg-indigo-100 dark:bg-indigo-800/50 text-indigo-700 dark:text-indigo-300' : 'bg-gray-100 dark:bg-slate-600 text-gray-500'
+                  }`}>{newColdMessageSent ? 'Yes' : 'No'}</span>
+              </button>
 
-                {newColdMessageSent && (
-                  <div className="space-y-2 border-t border-gray-200 dark:border-slate-600 pt-2">
-                    <div className="grid grid-cols-2 gap-2">
+              {newColdMessageSent && (
+                <div className="bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/50 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowNetColdDetails(v => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2 text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/20 transition-colors"
+                  >
+                    <span>Fill in details (via, category, email addresses, message body)</span>
+                    {showNetColdDetails ? <FaChevronUp className="text-xs" /> : <FaChevronDown className="text-xs" />}
+                  </button>
+
+                  {showNetColdDetails && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-indigo-200 dark:border-indigo-800/50 pt-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
+                          <select
+                            value={newColdMessageVia}
+                            onChange={(e) => setNewColdMessageVia(e.target.value)}
+                            className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                          >
+                            <option value="">Select...</option>
+                            {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contact Name</label>
+                          <input
+                            type="text"
+                            value={newColdContactName}
+                            onChange={(e) => setNewColdContactName(e.target.value)}
+                            placeholder="Who you messaged"
+                            className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                          />
+                        </div>
+                      </div>
+
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Via</label>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
                         <select
-                          value={newColdMessageVia}
-                          onChange={(e) => setNewColdMessageVia(e.target.value)}
-                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                          value={newColdContactCategory}
+                          onChange={(e) => setNewColdContactCategory(e.target.value)}
+                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
                         >
                           <option value="">Select...</option>
-                          {COLD_MESSAGE_VIA_OPTIONS.map(opt => (
+                          {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Contact Name</label>
-                        <input
-                          type="text"
-                          value={newColdContactName}
-                          onChange={(e) => setNewColdContactName(e.target.value)}
-                          placeholder="Who you messaged"
-                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
-                      <select
-                        value={newColdContactCategory}
-                        onChange={(e) => setNewColdContactCategory(e.target.value)}
-                        className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
-                      >
-                        <option value="">Select...</option>
-                        {COLD_CONTACT_CATEGORY_OPTIONS.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {newColdMessageVia === 'Email' && (
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
-                        <input
-                          type="email"
-                          value={newColdContactEmail}
-                          onChange={(e) => setNewColdContactEmail(e.target.value)}
-                          placeholder="recipient@company.com"
-                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
-                      <textarea
-                        value={newColdMessageBody}
-                        onChange={(e) => setNewColdMessageBody(e.target.value)}
-                        rows={3}
-                        placeholder="Paste the cold email or message you sent..."
-                        className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {formData.networking_contacts && formData.networking_contacts.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {formData.networking_contacts.map((contact, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-600">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <FaLinkedin className="text-blue-600 flex-shrink-0" />
-                        <span className="font-medium text-sm text-gray-900 dark:text-white">{contact.name}</span>
-                        <a
-                          href={contact.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline truncate max-w-[150px]"
-                        >
-                          {contact.linkedin}
-                        </a>
+                      {newColdMessageVia === 'Email' && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Recipient Email Address(es)</label>
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {newColdContactEmails.map((em, i) => (
+                              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs rounded-full">
+                                {em}
+                                <button type="button" onClick={() => setNewColdContactEmails(prev => prev.filter((_, j) => j !== i))} className="hover:text-red-500">
+                                  <FaTimes className="text-[10px]" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-1.5">
+                            <input
+                              type="email"
+                              value={newColdEmailInput}
+                              onChange={e => setNewColdEmailInput(e.target.value)}
+                              onKeyDown={e => {
+                                if ((e.key === 'Enter' || e.key === ',') && newColdEmailInput.trim()) {
+                                  e.preventDefault();
+                                  setNewColdContactEmails(prev => [...prev, newColdEmailInput.trim()]);
+                                  setNewColdEmailInput('');
+                                }
+                              }}
+                              placeholder="Type email and press Enter"
+                              className="flex-1 px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => { if (newColdEmailInput.trim()) { setNewColdContactEmails(prev => [...prev, newColdEmailInput.trim()]); setNewColdEmailInput(''); } }}
+                              className="px-2 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                            >
+                              <FaPlus className="text-xs" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">Press Enter or comma to add each address</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Message / Email Body</label>
+                        <textarea
+                          value={newColdMessageBody}
+                          onChange={(e) => setNewColdMessageBody(e.target.value)}
+                          rows={3}
+                          placeholder="Paste the cold email or message you sent..."
+                          className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-mono"
+                        />
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeNetworkingContact(index)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <FaTrash className="text-sm" />
-                      </button>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
+
+              {/* Add button */}
+              <button
+                type="button"
+                onClick={addNetworkingContact}
+                disabled={!newContactName || !newContactLinkedin}
+                className="w-full py-1.5 flex items-center justify-center gap-2 border border-dashed border-blue-400 dark:border-blue-600 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-40 disabled:cursor-not-allowed text-sm transition-colors"
+              >
+                <FaPlus className="text-xs" /> Add Contact
+              </button>
             </div>
+
+            {formData.networking_contacts && formData.networking_contacts.length > 0 && (
+              <div className="space-y-2 mt-3">
+                {formData.networking_contacts.map((contact, index) => (
+                  <div key={index} className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-600">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <FaLinkedin className="text-blue-600 flex-shrink-0" />
+                      <span className="font-medium text-sm text-gray-900 dark:text-white">{contact.name}</span>
+                      <a
+                        href={contact.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline truncate max-w-[150px]"
+                      >
+                        {contact.linkedin}
+                      </a>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeNetworkingContact(index)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                    >
+                      <FaTrash className="text-sm" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* References */}
@@ -960,8 +1072,8 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
             </button>
           </div>
         </form>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 };
 

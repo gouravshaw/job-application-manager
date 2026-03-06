@@ -8,11 +8,12 @@ export interface StatusHistoryEntry {
 export interface NetworkingContact {
   name: string;
   linkedin: string;
+  email?: string;            // direct email of the contact
   cold_message_sent?: boolean;
   cold_message_via?: string;
   cold_contact_name?: string;
   cold_contact_category?: string;
-  cold_contact_email?: string;
+  cold_contact_emails?: string[];  // one or more recipient emails (when via === 'Email')
   cold_message_body?: string;
 }
 
@@ -49,7 +50,7 @@ export interface JobApplication {
   contact_cold_message_sent?: boolean;
   contact_cold_message_via?: string;
   contact_cold_contact_category?: string;
-  contact_cold_contact_email?: string;
+  contact_cold_contact_emails?: string[];  // multiple recipients
   contact_cold_message_body?: string;
   networking_contacts?: NetworkingContact[];
   created_at: string;
@@ -83,7 +84,7 @@ export interface JobApplicationCreate {
   contact_cold_message_sent?: boolean;
   contact_cold_message_via?: string;
   contact_cold_contact_category?: string;
-  contact_cold_contact_email?: string;
+  contact_cold_contact_emails?: string[];  // multiple recipients
   contact_cold_message_body?: string;
   networking_contacts?: NetworkingContact[];
   status_stage?: string;
