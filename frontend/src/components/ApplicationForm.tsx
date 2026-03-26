@@ -19,8 +19,8 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     location: initialData?.location || '',
     work_type: initialData?.work_type || '',
     domain: initialData?.domain || '',
-    status: initialData?.status || 'Saved',
-    application_date: initialData?.application_date ? new Date(initialData.application_date).toISOString().slice(0, 16) : '',
+    status: initialData?.status || 'Applied',
+    application_date: initialData?.application_date ? new Date(initialData.application_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
     application_deadline: initialData?.application_deadline ? new Date(initialData.application_deadline).toISOString().slice(0, 16) : '',
     applied_on: initialData?.applied_on || '',
     contact_person: initialData?.contact_person || '',
@@ -493,7 +493,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
           {/* Application Date, Applied On, and Deadline */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Application Date (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Application Date</label>
               <input
                 type="datetime-local"
                 name="application_date"
@@ -501,7 +501,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty if not applied yet</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-filled with current date & time</p>
             </div>
 
             <div>
