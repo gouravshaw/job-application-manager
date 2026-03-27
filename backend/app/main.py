@@ -283,6 +283,49 @@ def get_unique_domains(db: Session = Depends(get_db)):
     return [domain[0] for domain in domains if domain[0]]
 
 
+# ─── Cold Message Endpoints ──────────────────────────────────────────
+
+@app.get("/cold-messages/statistics/", response_model=schemas.ColdMessageStats)
+def get_cold_message_stats(db: Session = Depends(get_db)):
+    return crud.get_cold_message_stats(db)
+
+@app.post("/cold-messages/", response_model=schemas.ColdMessage)
+def create_cold_message(msg: schemas.ColdMessageCreate, db: Session = Depends(get_db)):
+    return crud.create_cold_message(db, msg)
+
+@app.get("/cold-messages/", response_model=List[schemas.ColdMessage])
+def list_cold_messages(
+    search: Optional[str] = None,
+    via: Optional[str] = None,
+    category: Optional[str] = None,
+    sort_by: Optional[str] = "created_at",
+    sort_order: Optional[str] = "desc",
+    db: Session = Depends(get_db),
+):
+    return crud.get_cold_messages(db, search=search, via=via, category=category,
+                                  sort_by=sort_by, sort_order=sort_order)
+
+@app.get("/cold-messages/{msg_id}", response_model=schemas.ColdMessage)
+def get_cold_message(msg_id: int, db: Session = Depends(get_db)):
+    msg = crud.get_cold_message(db, msg_id)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Cold message not found")
+    return msg
+
+@app.put("/cold-messages/{msg_id}", response_model=schemas.ColdMessage)
+def update_cold_message(msg_id: int, data: schemas.ColdMessageUpdate, db: Session = Depends(get_db)):
+    msg = crud.update_cold_message(db, msg_id, data)
+    if not msg:
+        raise HTTPException(status_code=404, detail="Cold message not found")
+    return msg
+
+@app.delete("/cold-messages/{msg_id}")
+def delete_cold_message(msg_id: int, db: Session = Depends(get_db)):
+    if not crud.delete_cold_message(db, msg_id):
+        raise HTTPException(status_code=404, detail="Cold message not found")
+    return {"message": "Cold message deleted successfully"}
+
+
 # Backup and Restore endpoints
 @app.get("/api/backup")
 def backup_database():

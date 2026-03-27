@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { FaChartBar, FaBriefcase, FaSun, FaMoon, FaBars, FaTimes, FaRocket } from 'react-icons/fa';
+import { FaChartBar, FaBriefcase, FaSun, FaMoon, FaBars, FaTimes, FaRocket, FaEnvelope } from 'react-icons/fa';
 
 interface SidebarProps {
-      activeTab: 'dashboard' | 'applications';
-      setActiveTab: (tab: 'dashboard' | 'applications') => void;
+      activeTab: 'dashboard' | 'applications' | 'cold-messages';
+      setActiveTab: (tab: 'dashboard' | 'applications' | 'cold-messages') => void;
       isDark: boolean;
       toggleTheme: () => void;
 }
@@ -16,6 +16,7 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
       const navItems = [
             { id: 'dashboard', label: 'Dashboard', icon: FaChartBar },
             { id: 'applications', label: 'Applications', icon: FaBriefcase },
+            { id: 'cold-messages', label: 'Cold Messages', icon: FaEnvelope },
       ] as const;
 
       return (

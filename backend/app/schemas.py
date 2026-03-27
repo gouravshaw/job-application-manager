@@ -100,3 +100,49 @@ class ApplicationStats(BaseModel):
     recent_applications: int
     rejections_by_stage: Dict[str, int]
 
+
+# Cold Message Schemas
+class ColdMessageBase(BaseModel):
+    contact_name: str
+    company_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_linkedin: Optional[str] = None
+    via: str  # 'Email', 'LinkedIn Message', 'Other'
+    category: Optional[str] = None  # 'Employee', 'Hiring Manager', 'Recruiter', 'Other'
+    subject: Optional[str] = None
+    message_body: Optional[str] = None
+    sent_date: Optional[datetime] = None
+    got_reply: Optional[bool] = False
+    notes: Optional[str] = None
+
+class ColdMessageCreate(ColdMessageBase):
+    pass
+
+class ColdMessageUpdate(BaseModel):
+    contact_name: Optional[str] = None
+    company_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_linkedin: Optional[str] = None
+    via: Optional[str] = None
+    category: Optional[str] = None
+    subject: Optional[str] = None
+    message_body: Optional[str] = None
+    sent_date: Optional[datetime] = None
+    got_reply: Optional[bool] = None
+    notes: Optional[str] = None
+
+class ColdMessage(ColdMessageBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class ColdMessageStats(BaseModel):
+    total: int
+    by_via: Dict[str, int]
+    by_category: Dict[str, int]
+    reply_count: int
+    reply_rate: float
+

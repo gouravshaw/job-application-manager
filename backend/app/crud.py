@@ -383,3 +383,86 @@ def get_all_tags(db: Session) -> List[str]:
                     pass
     return sorted(list(all_tags))
 
+
+# ─── Cold Message CRUD ───────────────────────────────────────────────
+
+def create_cold_message(db: Session, cold_message: schemas.ColdMessageCreate):
+    data = cold_message.model_dump()
+    if not data.get("sent_date"):
+        data["sent_date"] = datetime.now()
+    db_msg = models.ColdMessage(**data)
+    db.add(db_msg)
+    db.commit()
+    db.refresh(db_msg)
+    return db_msg
+
+def get_cold_messages(db: Session, search: Optional[str] = None,
+                      via: Optional[str] = None, category: Optional[str] = None,
+                      sort_by: str = "created_at", sort_order: str = "desc"):
+    query = db.query(models.ColdMessage)
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.ColdMessage.contact_name.ilike(term),
+                models.ColdMessage.company_name.ilike(term),
+                models.ColdMessage.subject.ilike(term),
+                models.ColdMessage.notes.ilike(term),
+            )
+        )
+    if via:
+        query = query.filter(models.ColdMessage.via == via)
+    if category:
+        query = query.filter(models.ColdMessage.category == category)
+
+    sort_col = getattr(models.ColdMessage, sort_by, models.ColdMessage.created_at)
+    if sort_order == "asc":
+        query = query.order_by(sort_col.asc())
+    else:
+        query = query.order_by(sort_col.desc())
+    return query.all()
+
+def get_cold_message(db: Session, msg_id: int):
+    return db.query(models.ColdMessage).filter(models.ColdMessage.id == msg_id).first()
+
+def update_cold_message(db: Session, msg_id: int, data: schemas.ColdMessageUpdate):
+    db_msg = get_cold_message(db, msg_id)
+    if not db_msg:
+        return None
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(db_msg, field, value)
+    db.commit()
+    db.refresh(db_msg)
+    return db_msg
+
+def delete_cold_message(db: Session, msg_id: int):
+    db_msg = get_cold_message(db, msg_id)
+    if not db_msg:
+        return False
+    db.delete(db_msg)
+    db.commit()
+    return True
+
+def get_cold_message_stats(db: Session):
+    total = db.query(models.ColdMessage).count()
+
+    via_counts = db.query(
+        models.ColdMessage.via, func.count(models.ColdMessage.id)
+    ).group_by(models.ColdMessage.via).all()
+    by_via = {v: c for v, c in via_counts}
+
+    cat_counts = db.query(
+        models.ColdMessage.category, func.count(models.ColdMessage.id)
+    ).filter(models.ColdMessage.category.isnot(None)).group_by(models.ColdMessage.category).all()
+    by_category = {c: n for c, n in cat_counts}
+
+    reply_count = db.query(models.ColdMessage).filter(models.ColdMessage.got_reply == True).count()
+    reply_rate = round((reply_count / total) * 100, 1) if total > 0 else 0.0
+
+    return schemas.ColdMessageStats(
+        total=total,
+        by_via=by_via,
+        by_category=by_category,
+        reply_count=reply_count,
+        reply_rate=reply_rate,
+    )

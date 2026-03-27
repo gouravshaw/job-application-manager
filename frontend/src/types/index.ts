@@ -171,3 +171,45 @@ export interface FilterState {
   rejectionStage?: string;
 }
 
+// Cold Message Types
+export interface ColdMessage {
+  id: number;
+  contact_name: string;
+  company_name?: string;
+  contact_email?: string;
+  contact_linkedin?: string;
+  via: string;
+  category?: string;
+  subject?: string;
+  message_body?: string;
+  sent_date?: string;
+  got_reply?: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ColdMessageCreate {
+  contact_name: string;
+  company_name?: string;
+  contact_email?: string;
+  contact_linkedin?: string;
+  via: string;
+  category?: string;
+  subject?: string;
+  message_body?: string;
+  sent_date?: string;
+  got_reply?: boolean;
+  notes?: string;
+}
+
+export interface ColdMessageStats {
+  total: number;
+  by_via: { [key: string]: number };
+  by_category: { [key: string]: number };
+  reply_count: number;
+  reply_rate: number;
+}
+
+export const COLD_VIA_OPTIONS = ['Email', 'LinkedIn Message', 'Other'];
+export const COLD_CATEGORY_OPTIONS = ['Employee', 'Hiring Manager', 'Recruiter', 'Other'];

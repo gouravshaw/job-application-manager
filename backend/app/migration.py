@@ -176,6 +176,32 @@ def migrate_database():
     else:
         print("STATUS: contact_cold_message_body column already exists")
 
+    # ─── Create cold_messages table if it doesn't exist ─────────────────
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cold_messages'")
+    if not cursor.fetchone():
+        print("Creating cold_messages table...")
+        cursor.execute("""
+            CREATE TABLE cold_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                contact_name TEXT NOT NULL,
+                company_name TEXT,
+                contact_email TEXT,
+                contact_linkedin TEXT,
+                via TEXT NOT NULL,
+                category TEXT,
+                subject TEXT,
+                message_body TEXT,
+                sent_date TIMESTAMP,
+                got_reply BOOLEAN DEFAULT 0,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+        """)
+        print("STATUS: cold_messages table created")
+    else:
+        print("STATUS: cold_messages table already exists")
+
     conn.commit()
     conn.close()
     

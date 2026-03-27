@@ -55,3 +55,22 @@ class JobApplication(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
+class ColdMessage(Base):
+    __tablename__ = "cold_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contact_name = Column(String, nullable=False)
+    company_name = Column(String)
+    contact_email = Column(String)
+    contact_linkedin = Column(String)
+    via = Column(String, nullable=False)  # 'Email', 'LinkedIn Message', 'Other'
+    category = Column(String)  # 'Employee', 'Hiring Manager', 'Recruiter', 'Other'
+    subject = Column(String)
+    message_body = Column(Text)
+    sent_date = Column(DateTime(timezone=True))
+    got_reply = Column(Boolean, default=False)
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+

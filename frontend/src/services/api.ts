@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { JobApplication, JobApplicationCreate, ApplicationStats } from '../types';
+import { JobApplication, JobApplicationCreate, ApplicationStats, ColdMessage, ColdMessageCreate, ColdMessageStats } from '../types';
 
 export interface RestorePreview {
   current_count: number;
@@ -182,3 +182,42 @@ export const applicationApi = {
   },
 };
 
+export const coldMessageApi = {
+  getAll: async (filters?: {
+    search?: string;
+    via?: string;
+    category?: string;
+    sort_by?: string;
+    sort_order?: string;
+  }): Promise<ColdMessage[]> => {
+    const params: any = {};
+    if (filters) {
+      if (filters.search) params.search = filters.search;
+      if (filters.via) params.via = filters.via;
+      if (filters.category) params.category = filters.category;
+      if (filters.sort_by) params.sort_by = filters.sort_by;
+      if (filters.sort_order) params.sort_order = filters.sort_order;
+    }
+    const response = await api.get('/cold-messages/', { params });
+    return response.data;
+  },
+
+  create: async (data: ColdMessageCreate): Promise<ColdMessage> => {
+    const response = await api.post('/cold-messages/', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: Partial<ColdMessageCreate>): Promise<ColdMessage> => {
+    const response = await api.put(`/cold-messages/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/cold-messages/${id}`);
+  },
+
+  getStatistics: async (): Promise<ColdMessageStats> => {
+    const response = await api.get('/cold-messages/statistics/');
+    return response.data;
+  },
+};

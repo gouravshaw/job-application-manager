@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ApplicationList } from './components/ApplicationList';
+import { ColdMessages } from './components/ColdMessages';
 import { Sidebar } from './components/Sidebar';
 import { useTheme } from './contexts/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
@@ -8,10 +9,10 @@ import './index.css';
 
 function AppContent() {
   // Initialize state from URL
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'cold-messages'>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    return (tab === 'applications' || tab === 'dashboard') ? tab : 'dashboard';
+    return (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages') ? tab : 'dashboard';
   });
 
   const [initialFilter, setInitialFilter] = useState<{ type: string; value: string; timestamp?: number } | null>(null);
@@ -29,7 +30,7 @@ function AppContent() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'applications' || tab === 'dashboard') {
+      if (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages') {
         setActiveTab(tab);
       } else {
         setActiveTab('dashboard');
@@ -61,9 +62,13 @@ function AppContent() {
             <div className="animate-slideUp">
               <Dashboard onCardClick={handleDashboardClick} />
             </div>
-          ) : (
+          ) : activeTab === 'applications' ? (
             <div className="animate-slideUp">
               <ApplicationList initialFilter={initialFilter} />
+            </div>
+          ) : (
+            <div className="animate-slideUp">
+              <ColdMessages />
             </div>
           )}
         </div>
