@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
-import { FaPlus, FaTimes } from 'react-icons/fa';
-import { JobApplication, FilterState } from '../types';
+import { FaPlus, FaTimes, FaChevronDown, FaMagic } from 'react-icons/fa';
+import { JobApplication, FilterState, JobApplicationCreate } from '../types';
 import { applicationApi } from '../services/api';
 import { ApplicationCard } from './ApplicationCard';
 import { ApplicationForm } from './ApplicationForm';
@@ -8,6 +8,7 @@ import { SearchFilterBar } from './SearchFilterBar';
 import { BulkActionsBar } from './BulkActionsBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { EmptyState } from './EmptyState';
+import { JDParserModal } from './JDParserModal';
 
 interface ApplicationListProps {
   initialFilter?: { type: string; value: string; timestamp?: number } | null;
@@ -18,6 +19,10 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingApplication, setEditingApplication] = useState<JobApplication | null>(null);
+  const [prefillData, setPrefillData] = useState<Partial<JobApplicationCreate> | undefined>(undefined);
+  const [showJDParser, setShowJDParser] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
   const [domains, setDomains] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -57,6 +62,17 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
   useEffect(() => {
     loadDomains();
     loadTags();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setShowAddMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Apply initial filter from dashboard (only when prop changes after mount)
@@ -257,9 +273,16 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
 
   const handleFormSuccess = () => {
     setShowForm(false);
+    setPrefillData(undefined);
     loadApplications();
     loadDomains();
     loadTags();
+  };
+
+  const handleJDParsed = (data: Partial<JobApplicationCreate>) => {
+    setShowJDParser(false);
+    setPrefillData(data);
+    setShowForm(true);
   };
 
   const toggleSelection = (id: number) => {
@@ -333,7 +356,7 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
             </div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {applications.length > 0 && (
             <button
               onClick={toggleSelectAll}
@@ -342,14 +365,60 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
               {selectedIds.length === applications.length ? 'Deselect All' : 'Select All'}
             </button>
           )}
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] transition-all shadow-md"
-            title="Keyboard shortcut: N"
-          >
-            <FaPlus />
-            Add Application
-          </button>
+
+          {/* Split Add Button */}
+          <div className="relative" ref={addMenuRef}>
+            <div className="flex rounded-xl overflow-hidden shadow-md">
+              {/* Primary action */}
+              <button
+                onClick={() => { setEditingApplication(null); setPrefillData(undefined); setShowForm(true); setShowAddMenu(false); }}
+                className="flex items-center gap-2 bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-5 py-3 hover:shadow-lg hover:shadow-blue-500/20 transition-all font-medium"
+                title="Add application manually (shortcut: N)"
+              >
+                <FaPlus />
+                Add Application
+              </button>
+              {/* Chevron toggle */}
+              <button
+                onClick={() => setShowAddMenu(v => !v)}
+                className="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-3 border-l border-indigo-500 transition-colors"
+                title="More options"
+              >
+                <FaChevronDown className={`text-sm transition-transform duration-200 ${showAddMenu ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {/* Dropdown menu */}
+            {showAddMenu && (
+              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-30 overflow-hidden animate-slideUp">
+                <button
+                  onClick={() => { setEditingApplication(null); setPrefillData(undefined); setShowForm(true); setShowAddMenu(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                    <FaPlus className="text-blue-600 dark:text-blue-400 text-xs" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Add Manually</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Fill in fields yourself</p>
+                  </div>
+                </button>
+                <div className="h-px bg-gray-100 dark:bg-slate-700" />
+                <button
+                  onClick={() => { setShowJDParser(true); setShowAddMenu(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left"
+                >
+                  <div className="p-1.5 bg-violet-100 dark:bg-violet-900/40 rounded-lg">
+                    <FaMagic className="text-violet-600 dark:text-violet-400 text-xs" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Add Using JD</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Auto-extract from job post</p>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -423,6 +492,14 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
         onSuccess={handleBulkSuccess}
       />
 
+      {/* JD Parser Modal */}
+      {showJDParser && (
+        <JDParserModal
+          onCancel={() => setShowJDParser(false)}
+          onParsed={handleJDParsed}
+        />
+      )}
+
       {/* Application Form Modal */}
       {showForm && (
         <ApplicationForm
@@ -430,8 +507,9 @@ export const ApplicationList = ({ initialFilter }: ApplicationListProps) => {
           onCancel={() => {
             setShowForm(false);
             setEditingApplication(null);
+            setPrefillData(undefined);
           }}
-          initialData={editingApplication || undefined}
+          initialData={editingApplication || (prefillData as any) || undefined}
           isEdit={!!editingApplication}
         />
       )}

@@ -18,7 +18,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     job_url: initialData?.job_url || '',
     location: initialData?.location || '',
     work_type: initialData?.work_type || '',
-    domain: initialData?.domain || '',
+    domain: initialData?.domain || (isEdit ? '' : 'Cloud'),
     status: initialData?.status || 'Applied',
     application_date: initialData?.application_date ? new Date(initialData.application_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
     application_deadline: initialData?.application_deadline ? new Date(initialData.application_deadline).toISOString().slice(0, 16) : '',
