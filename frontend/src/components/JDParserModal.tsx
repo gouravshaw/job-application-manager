@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaTimes, FaMagic, FaBuilding, FaBriefcase, FaMapMarkerAlt, FaMoneyBillWave, FaLaptopCode, FaCheckCircle, FaShieldAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTimes, FaMagic, FaBuilding, FaBriefcase, FaMapMarkerAlt, FaMoneyBillWave, FaLaptopCode, FaCheckCircle, FaShieldAlt, FaExclamationTriangle, FaUser } from 'react-icons/fa';
 import { JobApplicationCreate, WORK_TYPE_OPTIONS } from '../types';
 
 interface ParsedFields {
@@ -10,6 +10,7 @@ interface ParsedFields {
   salary_min?: number;
   salary_max?: number;
   job_description: string;
+  contact_person: string;
 }
 
 interface JDParserModalProps {
@@ -165,17 +166,19 @@ const JUNK_LINE_PATTERNS = [
   /^(apply|saved|save|easy\s+apply)$/i,
   /^use\s+ai\s+to\s+assess/i,
   /^(show\s+match\s+details|tailor\s+(my\s+)?resume|create\s+cover\s+letter|help\s+me\s+stand\s+out)/i,
-  /^people\s+you\s+can\s+reach\s+out\s+to/i,
+  /^people\s+you\s+can\s+reach\s+out\s+to/i,  // drop heading, keep content below
   /^school\s+alumni\s+from/i,
   /^show\s+all$/i,
+  /^message$/i,                               // LinkedIn "Message" button
   /^\s*(premium|sponsored)\s*$/i,
-  /^(about\s+the\s+job)$/i,   // drop the heading — content follows anyway
+  /^(about\s+the\s+job)$/i,
 ];
 
 // Block-level sections to drop entirely (start → next heading)
+// NOTE: "People you can reach out to" is intentionally NOT here — we want
+// "Meet the hiring team" and the person's name below it to be preserved.
 const JUNK_SECTION_STARTS = [
   /^use\s+ai\s+to\s+assess/i,
-  /^people\s+you\s+can\s+reach\s+out\s+to/i,
 ];
 
 function cleanJD(text: string): string {
@@ -211,6 +214,9 @@ function cleanJD(text: string): string {
     const withoutMeta = rawLine
       .replace(/·\s*\d+\s+(days?|hours?|weeks?)\s+ago/gi, '')
       .replace(/·\s*\d+\s+people\s+(clicked|applied)\s+apply/gi, '')
+      // Strip LinkedIn badges from name lines: "Anthony Speed ✓ • 2nd" → "Anthony Speed"
+      .replace(/[✓✔☑]\s*/g, '')
+      .replace(/[·•]\s*(1st|2nd|3rd)\b/gi, '')
       .trimEnd();
 
     cleaned.push(withoutMeta);
@@ -250,6 +256,29 @@ function detectSecurityClearance(text: string): ClearanceDetection {
   return { found: requirements.length > 0, requirements };
 }
 
+function extractContactPerson(text: string): string {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (/meet\s+the\s+hiring\s+team/i.test(lines[i].trim())) {
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const candidate = lines[j].trim();
+        if (!candidate || candidate.length < 2) continue;
+        // Skip lines that look like job titles / boilerplate
+        if (/job\s+poster|recruiter|hiring\s+manager|show\s+all/i.test(candidate)) continue;
+        // Strip LinkedIn badges: ✓ ✔ • 2nd 1st 3rd and similar
+        const cleaned = candidate
+          .replace(/[✓✔☑]/g, '')
+          .replace(/[·•]\s*(1st|2nd|3rd)\b/gi, '')
+          .replace(/\s+(1st|2nd|3rd)\b/gi, '')
+          .trim();
+        // Must look like a real name (2+ words or at least one capitalised word)
+        if (cleaned.length > 1 && /^[A-Z]/.test(cleaned)) return cleaned;
+      }
+    }
+  }
+  return '';
+}
+
 function parseJD(text: string): ParsedFields {
   const cleanedText = cleanJD(text);
   return {
@@ -259,6 +288,7 @@ function parseJD(text: string): ParsedFields {
     work_type: extractWorkType(text),
     ...extractSalary(text),
     job_description: cleanedText,
+    contact_person: extractContactPerson(text),
   };
 }
 
@@ -277,6 +307,7 @@ export const JDParserModal = ({ onCancel, onParsed }: JDParserModalProps) => {
     location: '',
     work_type: '',
     job_description: '',
+    contact_person: '',
   });
 
   const handleParse = () => {
@@ -308,6 +339,7 @@ export const JDParserModal = ({ onCancel, onParsed }: JDParserModalProps) => {
       salary_min: fields.salary_min,
       salary_max: fields.salary_max,
       job_description: fields.job_description,
+      contact_person: fields.contact_person || undefined,
       ...(clearanceTags.length > 0 ? { tags: clearanceTags } : {}),
     };
     onParsed(data);
@@ -315,7 +347,8 @@ export const JDParserModal = ({ onCancel, onParsed }: JDParserModalProps) => {
 
   const detectedCount = parsed
     ? [parsed.company_name, parsed.job_title, parsed.location, parsed.work_type,
-       parsed.salary_min != null || parsed.salary_max != null ? 'salary' : ''].filter(Boolean).length
+       parsed.salary_min != null || parsed.salary_max != null ? 'salary' : '',
+       parsed.contact_person].filter(Boolean).length
     : 0;
 
   return (
@@ -473,6 +506,21 @@ We are looking for a Backend Engineer to join our growing team...`}
                   value={fields.job_title}
                   onChange={e => handleFieldChange('job_title', e.target.value)}
                   placeholder="e.g. Software Engineer"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
+                />
+              </div>
+
+              {/* Contact Person */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  <FaUser className="text-gray-400" /> Contact Person
+                  {fields.contact_person && <span className="ml-1 text-xs text-emerald-500 font-normal">auto-detected from hiring team</span>}
+                </label>
+                <input
+                  type="text"
+                  value={fields.contact_person}
+                  onChange={e => handleFieldChange('contact_person', e.target.value)}
+                  placeholder="e.g. Jane Smith (hiring manager)"
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
                 />
               </div>

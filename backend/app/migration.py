@@ -194,6 +194,7 @@ def migrate_database():
                 sent_date TIMESTAMP,
                 got_reply BOOLEAN DEFAULT 0,
                 notes TEXT,
+                connection_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP
             )
@@ -201,9 +202,46 @@ def migrate_database():
         print("STATUS: cold_messages table created")
     else:
         print("STATUS: cold_messages table already exists")
+        # Add connection_id column if it doesn't exist yet
+        cursor.execute("PRAGMA table_info(cold_messages)")
+        cm_columns = [col[1] for col in cursor.fetchall()]
+        if 'connection_id' not in cm_columns:
+            print("Adding connection_id column to cold_messages...")
+            cursor.execute("ALTER TABLE cold_messages ADD COLUMN connection_id INTEGER")
+            print("STATUS: connection_id column added to cold_messages")
+        else:
+            print("STATUS: cold_messages.connection_id already exists")
+
+
+    # ─── Create linkedin_connections table if it doesn't exist ────────────
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='linkedin_connections'")
+    if not cursor.fetchone():
+        print("Creating linkedin_connections table...")
+        cursor.execute("""
+            CREATE TABLE linkedin_connections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                contact_name TEXT NOT NULL,
+                linkedin_profile_id TEXT,
+                company_name TEXT,
+                category TEXT,
+                connection_status TEXT DEFAULT 'Pending',
+                requested_on TIMESTAMP,
+                accepted_on TIMESTAMP,
+                cold_message_sent BOOLEAN DEFAULT 0,
+                cold_message_id INTEGER,
+                follow_up_date TIMESTAMP,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+        """)
+        print("STATUS: linkedin_connections table created")
+    else:
+        print("STATUS: linkedin_connections table already exists")
 
     conn.commit()
     conn.close()
+
     
     print("\nSUCCESS: Migration completed successfully!")
     print("Your data is safe and the new features are ready to use.")

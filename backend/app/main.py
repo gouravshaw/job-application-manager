@@ -217,57 +217,135 @@ def get_statistics(db: Session = Depends(get_db)):
 
 @app.get("/export/excel")
 def export_to_excel(db: Session = Depends(get_db)):
-    """Export all job applications to Excel file"""
+    """Export all job applications and cold messages to a multi-sheet Excel file"""
+    import json as _json
+    from openpyxl.styles import PatternFill, Font, Alignment
+
     applications = crud.get_all_applications_for_export(db)
-    
-    if not applications:
-        raise HTTPException(status_code=404, detail="No applications to export")
-    
-    # Prepare data for Excel
-    data = []
+    cold_messages = crud.get_cold_messages(db)
+
+    # ── Sheet 1: Job Applications ────────────────────────────────────────
+    apps_data = []
     for app in applications:
-        data.append({
+        # Derive latest rejection stage from status_history
+        rejection_stage = ""
+        try:
+            history = app.status_history if isinstance(app.status_history, list) else _json.loads(app.status_history or "[]")
+            for entry in reversed(history):
+                if entry.get("stage"):
+                    rejection_stage = entry["stage"]
+                    break
+        except Exception:
+            pass
+
+        tags_raw = app.tags
+        if isinstance(tags_raw, str):
+            try:
+                tags_raw = _json.loads(tags_raw)
+            except Exception:
+                tags_raw = []
+        tags_str = ", ".join(tags_raw) if tags_raw else ""
+
+        apps_data.append({
             "ID": app.id,
             "Company Name": app.company_name,
             "Job Title": app.job_title,
             "Domain": app.domain or "",
             "Location": app.location or "",
             "Work Type": app.work_type or "",
+            "Applied On (Portal)": app.applied_on or "",
             "Status": app.status,
-            "Application Date": app.application_date.strftime("%Y-%m-%d %H:%M") if app.application_date else "",
+            "Rejection Stage": rejection_stage,
+            "Application Date": app.application_date.strftime("%Y-%m-%d") if app.application_date else "",
+            "Application Deadline": app.application_deadline.strftime("%Y-%m-%d") if app.application_deadline else "",
+            "Interview Date": app.interview_date.strftime("%Y-%m-%d") if app.interview_date else "",
             "Salary Min": app.salary_min or "",
             "Salary Max": app.salary_max or "",
+            "Tags": tags_str,
             "Job URL": app.job_url or "",
             "Contact Person": app.contact_person or "",
             "Contact Email": app.contact_email or "",
             "CV Uploaded": "Yes" if app.cv_filename else "No",
             "Cover Letter Uploaded": "Yes" if app.coverletter_filename else "No",
+            "Interview Notes": app.interview_notes or "",
             "Notes": app.notes or "",
-            "Created At": app.created_at.strftime("%Y-%m-%d %H:%M") if app.created_at else "",
+            "Job Description": app.job_description or "",
+            "Archived": "Yes" if app.is_archived else "No",
+            "Created At": app.created_at.strftime("%Y-%m-%d") if app.created_at else "",
         })
-    
-    # Create DataFrame
-    df = pd.DataFrame(data)
-    
-    # Create Excel file in memory
+
+    # ── Sheet 2: Cold Messages ───────────────────────────────────────────
+    cm_data = []
+    for msg in cold_messages:
+        cm_data.append({
+            "ID": msg.id,
+            "Contact Name": msg.contact_name,
+            "Company": msg.company_name or "",
+            "Contact Email": msg.contact_email or "",
+            "Contact LinkedIn": msg.contact_linkedin or "",
+            "Via": msg.via,
+            "Category": msg.category or "",
+            "Subject": msg.subject or "",
+            "Message Body": msg.message_body or "",
+            "Sent Date": msg.sent_date.strftime("%Y-%m-%d") if msg.sent_date else "",
+            "Got Reply": "Yes" if msg.got_reply else "No",
+            "Notes": msg.notes or "",
+            "Created At": msg.created_at.strftime("%Y-%m-%d") if msg.created_at else "",
+        })
+
+    # ── Build Excel ──────────────────────────────────────────────────────
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Job Applications', index=False)
-        
-        # Auto-adjust column widths
-        worksheet = writer.sheets['Job Applications']
+    header_fill = PatternFill(start_color="1E3A5F", end_color="1E3A5F", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    def style_sheet(ws, df):
         for idx, col in enumerate(df.columns):
-            max_length = max(
-                df[col].astype(str).apply(len).max(),
-                len(col)
-            )
-            worksheet.column_dimensions[chr(65 + idx)].width = min(max_length + 2, 50)
-    
+            col_letter = ws.cell(row=1, column=idx + 1).column_letter
+            cell = ws.cell(row=1, column=idx + 1)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_align
+            max_len = max(df[col].astype(str).apply(len).max() if not df.empty else 0, len(col))
+            ws.column_dimensions[col_letter].width = min(max_len + 3, 60)
+        ws.row_dimensions[1].height = 20
+
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_apps = pd.DataFrame(apps_data) if apps_data else pd.DataFrame(columns=list(apps_data[0].keys()) if apps_data else [])
+        df_apps.to_excel(writer, sheet_name='Job Applications', index=False)
+        style_sheet(writer.sheets['Job Applications'], df_apps)
+
+        df_cm = pd.DataFrame(cm_data) if cm_data else pd.DataFrame(columns=["ID","Contact Name","Company","Contact Email","Contact LinkedIn","Via","Category","Subject","Message Body","Sent Date","Got Reply","Notes","Created At"])
+        df_cm.to_excel(writer, sheet_name='Cold Messages', index=False)
+        style_sheet(writer.sheets['Cold Messages'], df_cm)
+
+        # ── Sheet 3: LinkedIn Connections ────────────────────────────────────
+        connections = crud.get_all_connections_for_export(db)
+        conn_data = [
+            {
+                "ID": c.id,
+                "Contact Name": c.contact_name,
+                "Company": c.company_name or "",
+                "LinkedIn Profile": c.linkedin_profile_id or "",
+                "Category": c.category or "",
+                "Status": c.connection_status,
+                "Cold Message Sent": "Yes" if c.cold_message_sent else "No",
+                "Requested On": c.requested_on.strftime("%Y-%m-%d") if c.requested_on else "",
+                "Accepted On": c.accepted_on.strftime("%Y-%m-%d") if c.accepted_on else "",
+                "Follow Up Date": c.follow_up_date.strftime("%Y-%m-%d") if c.follow_up_date else "",
+                "Notes": c.notes or "",
+                "Created At": c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
+            }
+            for c in connections
+        ]
+        conn_cols = ["ID","Contact Name","Company","LinkedIn Profile","Category","Status","Cold Message Sent","Requested On","Accepted On","Follow Up Date","Notes","Created At"]
+        df_conn = pd.DataFrame(conn_data) if conn_data else pd.DataFrame(columns=conn_cols)
+        df_conn.to_excel(writer, sheet_name='LinkedIn Connections', index=False)
+        style_sheet(writer.sheets['LinkedIn Connections'], df_conn)
+
     output.seek(0)
-    
-    # Generate filename with current date
-    filename = f"job_applications_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    
+    filename = f"job_tracker_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -324,6 +402,52 @@ def delete_cold_message(msg_id: int, db: Session = Depends(get_db)):
     if not crud.delete_cold_message(db, msg_id):
         raise HTTPException(status_code=404, detail="Cold message not found")
     return {"message": "Cold message deleted successfully"}
+
+
+# ─── LinkedIn Connection Endpoints ───────────────────────────────────
+
+@app.get("/connections/statistics/", response_model=schemas.LinkedInConnectionStats)
+def get_connection_stats(db: Session = Depends(get_db)):
+    return crud.get_connection_stats(db)
+
+@app.post("/connections/", response_model=schemas.LinkedInConnection)
+def create_connection(data: schemas.LinkedInConnectionCreate, db: Session = Depends(get_db)):
+    return crud.create_connection(db, data)
+
+@app.get("/connections/", response_model=List[schemas.LinkedInConnection])
+def list_connections(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    cold_message_sent: Optional[bool] = None,
+    sort_by: Optional[str] = "created_at",
+    sort_order: Optional[str] = "desc",
+    db: Session = Depends(get_db),
+):
+    return crud.get_connections(
+        db, search=search, status=status, category=category,
+        cold_message_sent=cold_message_sent, sort_by=sort_by, sort_order=sort_order
+    )
+
+@app.get("/connections/{conn_id}", response_model=schemas.LinkedInConnection)
+def get_connection(conn_id: int, db: Session = Depends(get_db)):
+    conn = crud.get_connection(db, conn_id)
+    if not conn:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return conn
+
+@app.put("/connections/{conn_id}", response_model=schemas.LinkedInConnection)
+def update_connection(conn_id: int, data: schemas.LinkedInConnectionUpdate, db: Session = Depends(get_db)):
+    conn = crud.update_connection(db, conn_id, data)
+    if not conn:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return conn
+
+@app.delete("/connections/{conn_id}")
+def delete_connection(conn_id: int, db: Session = Depends(get_db)):
+    if not crud.delete_connection(db, conn_id):
+        raise HTTPException(status_code=404, detail="Connection not found")
+    return {"message": "Connection deleted successfully"}
 
 
 # Backup and Restore endpoints

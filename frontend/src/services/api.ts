@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { JobApplication, JobApplicationCreate, ApplicationStats, ColdMessage, ColdMessageCreate, ColdMessageStats } from '../types';
+import { JobApplication, JobApplicationCreate, ApplicationStats, ColdMessage, ColdMessageCreate, ColdMessageStats, LinkedInConnection, LinkedInConnectionCreate, LinkedInConnectionStats } from '../types';
+
 
 export interface RestorePreview {
   current_count: number;
@@ -221,3 +222,46 @@ export const coldMessageApi = {
     return response.data;
   },
 };
+
+export const connectionApi = {
+  getAll: async (filters?: {
+    search?: string;
+    status?: string;
+    category?: string;
+    cold_message_sent?: boolean;
+    sort_by?: string;
+    sort_order?: string;
+  }): Promise<LinkedInConnection[]> => {
+    const params: Record<string, unknown> = {};
+    if (filters) {
+      if (filters.search) params.search = filters.search;
+      if (filters.status) params.status = filters.status;
+      if (filters.category) params.category = filters.category;
+      if (filters.cold_message_sent !== undefined) params.cold_message_sent = filters.cold_message_sent;
+      if (filters.sort_by) params.sort_by = filters.sort_by;
+      if (filters.sort_order) params.sort_order = filters.sort_order;
+    }
+    const response = await api.get('/connections/', { params });
+    return response.data;
+  },
+
+  create: async (data: LinkedInConnectionCreate): Promise<LinkedInConnection> => {
+    const response = await api.post('/connections/', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: Partial<LinkedInConnectionCreate>): Promise<LinkedInConnection> => {
+    const response = await api.put(`/connections/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/connections/${id}`);
+  },
+
+  getStatistics: async (): Promise<LinkedInConnectionStats> => {
+    const response = await api.get('/connections/statistics/');
+    return response.data;
+  },
+};
+

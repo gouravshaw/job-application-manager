@@ -185,6 +185,7 @@ export interface ColdMessage {
   sent_date?: string;
   got_reply?: boolean;
   notes?: string;
+  connection_id?: number;  // linked LinkedIn connection
   created_at: string;
   updated_at?: string;
 }
@@ -201,6 +202,7 @@ export interface ColdMessageCreate {
   sent_date?: string;
   got_reply?: boolean;
   notes?: string;
+  connection_id?: number;  // linked LinkedIn connection
 }
 
 export interface ColdMessageStats {
@@ -213,3 +215,49 @@ export interface ColdMessageStats {
 
 export const COLD_VIA_OPTIONS = ['Email', 'LinkedIn Message', 'Other'];
 export const COLD_CATEGORY_OPTIONS = ['Employee', 'Hiring Manager', 'Recruiter', 'Other'];
+
+// LinkedIn Connection Types
+export interface LinkedInConnection {
+  id: number;
+  contact_name: string;
+  linkedin_profile_id?: string;
+  company_name?: string;
+  category?: string;        // 'Recruiter' | 'Hiring Manager' | 'Employee' | 'Other'
+  connection_status: string; // 'Pending' | 'Accepted' | 'Withdrawn'
+  requested_on?: string;
+  accepted_on?: string;
+  cold_message_sent?: boolean;
+  cold_message_id?: number;
+  follow_up_date?: string;
+  notes?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface LinkedInConnectionCreate {
+  contact_name: string;
+  linkedin_profile_id?: string;
+  company_name?: string;
+  category?: string;
+  connection_status?: string;
+  requested_on?: string;
+  accepted_on?: string;
+  cold_message_sent?: boolean;
+  cold_message_id?: number;
+  follow_up_date?: string;
+  notes?: string;
+}
+
+export interface LinkedInConnectionStats {
+  total: number;
+  pending: number;
+  accepted: number;
+  withdrawn: number;
+  cold_message_sent: number;
+  accepted_no_message: number;
+  acceptance_rate: number;
+}
+
+export const CONNECTION_STATUS_OPTIONS = ['Pending', 'Accepted', 'Withdrawn'];
+export const CONNECTION_CATEGORY_OPTIONS = ['Recruiter', 'Hiring Manager', 'Employee', 'Other'];
+

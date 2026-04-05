@@ -114,6 +114,7 @@ class ColdMessageBase(BaseModel):
     sent_date: Optional[datetime] = None
     got_reply: Optional[bool] = False
     notes: Optional[str] = None
+    connection_id: Optional[int] = None  # link to a linkedin_connection
 
 class ColdMessageCreate(ColdMessageBase):
     pass
@@ -130,6 +131,7 @@ class ColdMessageUpdate(BaseModel):
     sent_date: Optional[datetime] = None
     got_reply: Optional[bool] = None
     notes: Optional[str] = None
+    connection_id: Optional[int] = None
 
 class ColdMessage(ColdMessageBase):
     id: int
@@ -145,4 +147,53 @@ class ColdMessageStats(BaseModel):
     by_category: Dict[str, int]
     reply_count: int
     reply_rate: float
+
+
+# LinkedIn Connection Request Schemas
+class LinkedInConnectionBase(BaseModel):
+    contact_name: str
+    linkedin_profile_id: Optional[str] = None
+    company_name: Optional[str] = None
+    category: Optional[str] = None          # 'Recruiter', 'Hiring Manager', 'Employee', 'Other'
+    connection_status: str = "Pending"      # 'Pending', 'Accepted', 'Withdrawn'
+    requested_on: Optional[datetime] = None
+    accepted_on: Optional[datetime] = None
+    cold_message_sent: Optional[bool] = False
+    cold_message_id: Optional[int] = None
+    follow_up_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+class LinkedInConnectionCreate(LinkedInConnectionBase):
+    pass
+
+class LinkedInConnectionUpdate(BaseModel):
+    contact_name: Optional[str] = None
+    linkedin_profile_id: Optional[str] = None
+    company_name: Optional[str] = None
+    category: Optional[str] = None
+    connection_status: Optional[str] = None
+    requested_on: Optional[datetime] = None
+    accepted_on: Optional[datetime] = None
+    cold_message_sent: Optional[bool] = None
+    cold_message_id: Optional[int] = None
+    follow_up_date: Optional[datetime] = None
+    notes: Optional[str] = None
+
+class LinkedInConnection(LinkedInConnectionBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class LinkedInConnectionStats(BaseModel):
+    total: int
+    pending: int
+    accepted: int
+    withdrawn: int
+    cold_message_sent: int
+    accepted_no_message: int
+    acceptance_rate: float
+
 

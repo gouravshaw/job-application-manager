@@ -1,7 +1,15 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { FaEnvelope, FaLinkedin, FaPlus, FaTimes, FaReply, FaChartPie, FaPaperPlane, FaChevronDown, FaChevronUp, FaTrash, FaEdit, FaSearch } from 'react-icons/fa';
-import { ColdMessage, ColdMessageCreate, ColdMessageStats, COLD_VIA_OPTIONS, COLD_CATEGORY_OPTIONS } from '../types';
-import { coldMessageApi } from '../services/api';
+import React, { useState, useEffect, FormEvent } from 'react';
+
+import {
+  FaEnvelope, FaLinkedin, FaPlus, FaTimes, FaReply, FaChartPie,
+  FaPaperPlane, FaChevronDown, FaChevronUp, FaTrash, FaEdit, FaSearch,
+  FaUserPlus, FaLink,
+} from 'react-icons/fa';
+import {
+  ColdMessage, ColdMessageCreate, ColdMessageStats, COLD_VIA_OPTIONS,
+  COLD_CATEGORY_OPTIONS, LinkedInConnection,
+} from '../types';
+import { coldMessageApi, connectionApi } from '../services/api';
 
 // ─── Add / Edit Form Modal ──────────────────────────────────────────
 
@@ -9,9 +17,10 @@ interface ColdMessageFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   initialData?: ColdMessage;
+  connections: LinkedInConnection[];
 }
 
-const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormProps) => {
+const ColdMessageForm = ({ onSuccess, onCancel, initialData, connections }: ColdMessageFormProps) => {
   const [formData, setFormData] = useState<ColdMessageCreate>({
     contact_name: initialData?.contact_name || '',
     company_name: initialData?.company_name || '',
@@ -24,8 +33,25 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
     sent_date: initialData?.sent_date ? new Date(initialData.sent_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
     got_reply: initialData?.got_reply || false,
     notes: initialData?.notes || '',
+    connection_id: initialData?.connection_id ?? undefined,
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // When a connection is selected, pre-fill name/company/category if empty
+  const handleConnectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const connId = e.target.value ? Number(e.target.value) : undefined;
+    setFormData(prev => {
+      const conn = connections.find(c => c.id === connId);
+      return {
+        ...prev,
+        connection_id: connId,
+        contact_name: prev.contact_name || conn?.contact_name || prev.contact_name,
+        company_name: prev.company_name || conn?.company_name || prev.company_name,
+        category: prev.category || conn?.category || prev.category,
+        contact_linkedin: prev.contact_linkedin || conn?.linkedin_profile_id || prev.contact_linkedin,
+      };
+    });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -51,6 +77,9 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
     }
   };
 
+  const inputCls = 'w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400';
+  const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1';
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -64,58 +93,74 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+
+          {/* ── Link to Connection (optional) ── */}
+          {connections.length > 0 && (
+            <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <label className="block text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
+                <FaLink className="text-sm" /> Link to a Connection Request (optional)
+              </label>
+              <select
+                value={formData.connection_id ?? ''}
+                onChange={handleConnectionChange}
+                className={inputCls}
+              >
+                <option value="">— None (standalone message) —</option>
+                {connections.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.contact_name}{c.company_name ? ` @ ${c.company_name}` : ''} [{c.connection_status}]
+                  </option>
+                ))}
+              </select>
+              {formData.connection_id && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5 flex items-center gap-1">
+                  <FaUserPlus className="text-[10px]" />
+                  Saving will automatically mark that connection as "Cold Message Sent"
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Contact Name + Company */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Contact Name <span className="text-red-500">*</span>
-              </label>
+              <label className={labelCls}>Contact Name <span className="text-red-500">*</span></label>
               <input type="text" name="contact_name" value={formData.contact_name} onChange={handleChange} required
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-                placeholder="e.g., John Doe" />
+                className={inputCls} placeholder="e.g., John Doe" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company (optional)</label>
+              <label className={labelCls}>Company (optional)</label>
               <input type="text" name="company_name" value={formData.company_name || ''} onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-                placeholder="e.g., Google" />
+                className={inputCls} placeholder="e.g., Google" />
             </div>
           </div>
 
           {/* Email + LinkedIn */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <label className={labelCls}>Email</label>
               <input type="email" name="contact_email" value={formData.contact_email || ''} onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-                placeholder="contact@company.com" />
+                className={inputCls} placeholder="contact@company.com" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <span className="flex items-center gap-1"><FaLinkedin className="text-blue-600" /> LinkedIn Profile</span>
-              </label>
+              <label className={labelCls}><span className="flex items-center gap-1"><FaLinkedin className="text-blue-600" /> LinkedIn Profile</span></label>
               <input type="url" name="contact_linkedin" value={formData.contact_linkedin || ''} onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-                placeholder="https://linkedin.com/in/..." />
+                className={inputCls} placeholder="https://linkedin.com/in/..." />
             </div>
           </div>
 
           {/* Via + Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Via <span className="text-red-500">*</span>
-              </label>
-              <select name="via" value={formData.via} onChange={handleChange} required
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+              <label className={labelCls}>Via <span className="text-red-500">*</span></label>
+              <select name="via" value={formData.via} onChange={handleChange} required className={inputCls}>
                 <option value="">Select...</option>
                 {COLD_VIA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-              <select name="category" value={formData.category || ''} onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+              <label className={labelCls}>Category</label>
+              <select name="category" value={formData.category || ''} onChange={handleChange} className={inputCls}>
                 <option value="">Select...</option>
                 {COLD_CATEGORY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -125,10 +170,10 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
           {/* Date + Got Reply */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Sent</label>
+              <label className={labelCls}>Date Sent</label>
               <input type="datetime-local" name="sent_date" value={formData.sent_date || ''} onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white" />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-filled with current date & time</p>
+                className={inputCls} />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-filled with current date &amp; time</p>
             </div>
             <div className="flex items-end pb-1">
               <button type="button" onClick={() => setFormData(prev => ({ ...prev, got_reply: !prev.got_reply }))}
@@ -150,26 +195,23 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject (optional)</label>
+            <label className={labelCls}>Subject (optional)</label>
             <input type="text" name="subject" value={formData.subject || ''} onChange={handleChange}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-              placeholder="e.g., Interested in SWE role at Google" />
+              className={inputCls} placeholder="e.g., Interested in SWE role at Google" />
           </div>
 
           {/* Message Body */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message Body</label>
+            <label className={labelCls}>Message Body</label>
             <textarea name="message_body" value={formData.message_body || ''} onChange={handleChange} rows={5}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 font-mono text-sm"
-              placeholder="Paste the message you sent..." />
+              className={`${inputCls} font-mono text-sm`} placeholder="Paste the message you sent..." />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <label className={labelCls}>Notes</label>
             <textarea name="notes" value={formData.notes || ''} onChange={handleChange} rows={2}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
-              placeholder="Any personal notes..." />
+              className={inputCls} placeholder="Any personal notes..." />
           </div>
 
           {/* Submit */}
@@ -195,6 +237,7 @@ const ColdMessageForm = ({ onSuccess, onCancel, initialData }: ColdMessageFormPr
 export const ColdMessages = () => {
   const [messages, setMessages] = useState<ColdMessage[]>([]);
   const [stats, setStats] = useState<ColdMessageStats | null>(null);
+  const [connections, setConnections] = useState<LinkedInConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMsg, setEditingMsg] = useState<ColdMessage | undefined>(undefined);
@@ -203,18 +246,23 @@ export const ColdMessages = () => {
   const [filterVia, setFilterVia] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
 
+  // Lookup map: connection_id → connection name display
+  const connMap = Object.fromEntries(connections.map(c => [c.id, c]));
+
   const loadData = async () => {
     try {
-      const [msgs, st] = await Promise.all([
+      const [msgs, st, conns] = await Promise.all([
         coldMessageApi.getAll({
           search: search || undefined,
           via: filterVia || undefined,
           category: filterCategory || undefined,
         }),
         coldMessageApi.getStatistics(),
+        connectionApi.getAll(),
       ]);
       setMessages(msgs);
       setStats(st);
+      setConnections(conns);
     } catch (err) {
       console.error('Error loading cold messages:', err);
     } finally {
@@ -279,6 +327,7 @@ export const ColdMessages = () => {
           onSuccess={handleFormSuccess}
           onCancel={() => { setShowForm(false); setEditingMsg(undefined); }}
           initialData={editingMsg}
+          connections={connections}
         />
       )}
 
@@ -418,88 +467,95 @@ export const ColdMessages = () => {
         </div>
       ) : (
         <div className="space-y-3 animate-slideUp" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
-          {messages.map(msg => (
-            <div key={msg.id} className="glass-card rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg">
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  {/* Left: info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap mb-2">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{msg.contact_name}</h4>
-                      {msg.company_name && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">@ {msg.company_name}</span>
-                      )}
-                      {msg.got_reply && (
-                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-semibold">
-                          <FaReply className="text-[10px]" /> Replied
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${getViaBadgeColor(msg.via)}`}>
-                        {getViaIcon(msg.via)} {msg.via}
-                      </span>
-                      {msg.category && (
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getCategoryBadgeColor(msg.category)}`}>
-                          {msg.category}
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
-                        {formatDate(msg.sent_date)}
-                      </span>
-                    </div>
-
-                    {msg.subject && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                        <strong>Subject:</strong> {msg.subject}
-                      </p>
-                    )}
-                    {msg.contact_email && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{msg.contact_email}</p>
-                    )}
-                  </div>
-
-                  {/* Right: actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={() => { setEditingMsg(msg); setShowForm(true); }}
-                      className="p-2 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                      title="Edit">
-                      <FaEdit />
-                    </button>
-                    <button onClick={() => handleDelete(msg.id)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      title="Delete">
-                      <FaTrash />
-                    </button>
-                    {msg.message_body && (
-                      <button onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                        title="Toggle message body">
-                        {expandedId === msg.id ? <FaChevronUp /> : <FaChevronDown />}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Expandable message body */}
-                {expandedId === msg.id && msg.message_body && (
-                  <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Message</p>
-                    <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                      {msg.message_body}
-                    </pre>
-                    {msg.notes && (
-                      <div className="mt-3">
-                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{msg.notes}</p>
+          {messages.map(msg => {
+            const linkedConn = msg.connection_id ? connMap[msg.connection_id] : undefined;
+            return (
+              <div key={msg.id} className="glass-card rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg">
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left: info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap mb-2">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{msg.contact_name}</h4>
+                        {msg.company_name && (
+                          <span className="text-sm text-gray-500 dark:text-gray-400">@ {msg.company_name}</span>
+                        )}
+                        {msg.got_reply && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-semibold">
+                            <FaReply className="text-[10px]" /> Replied
+                          </span>
+                        )}
+                        {/* Linked connection badge */}
+                        {linkedConn && (
+                          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                            <FaUserPlus className="text-[10px]" />
+                            Linked: {linkedConn.contact_name}{linkedConn.company_name ? ` @ ${linkedConn.company_name}` : ''}
+                          </span>
+                        )}
                       </div>
-                    )}
+
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${getViaBadgeColor(msg.via)}`}>
+                          {getViaIcon(msg.via)} {msg.via}
+                        </span>
+                        {msg.category && (
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getCategoryBadgeColor(msg.category)}`}>
+                            {msg.category}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                          {formatDate(msg.sent_date)}
+                        </span>
+                      </div>
+
+                      {msg.subject && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                          <strong>Subject:</strong> {msg.subject}
+                        </p>
+                      )}
+                      {msg.contact_email && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{msg.contact_email}</p>
+                      )}
+                    </div>
+
+                    {/* Right: actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => { setEditingMsg(msg); setShowForm(true); }}
+                        className="p-2 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit">
+                        <FaEdit />
+                      </button>
+                      <button onClick={() => handleDelete(msg.id)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
+                        <FaTrash />
+                      </button>
+                      {msg.message_body && (
+                        <button onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors" title="Toggle message body">
+                          {expandedId === msg.id ? <FaChevronUp /> : <FaChevronDown />}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
+
+                  {/* Expandable message body */}
+                  {expandedId === msg.id && msg.message_body && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Message</p>
+                      <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
+                        {msg.message_body}
+                      </pre>
+                      {msg.notes && (
+                        <div className="mt-3">
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{msg.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

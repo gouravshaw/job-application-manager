@@ -388,12 +388,20 @@ def get_all_tags(db: Session) -> List[str]:
 
 def create_cold_message(db: Session, cold_message: schemas.ColdMessageCreate):
     data = cold_message.model_dump()
+    connection_id = data.get("connection_id")
     if not data.get("sent_date"):
         data["sent_date"] = datetime.now()
     db_msg = models.ColdMessage(**data)
     db.add(db_msg)
     db.commit()
     db.refresh(db_msg)
+    # Auto-sync: mark the linked connection as cold_message_sent
+    if connection_id:
+        db_conn = get_connection(db, connection_id)
+        if db_conn:
+            db_conn.cold_message_sent = True
+            db_conn.cold_message_id = db_msg.id
+            db.commit()
     return db_msg
 
 def get_cold_messages(db: Session, search: Optional[str] = None,
@@ -429,16 +437,42 @@ def update_cold_message(db: Session, msg_id: int, data: schemas.ColdMessageUpdat
     db_msg = get_cold_message(db, msg_id)
     if not db_msg:
         return None
-    for field, value in data.model_dump(exclude_unset=True).items():
+    updates = data.model_dump(exclude_unset=True)
+    old_connection_id = db_msg.connection_id
+    for field, value in updates.items():
         setattr(db_msg, field, value)
     db.commit()
     db.refresh(db_msg)
+    # Sync connection if connection_id changed
+    if "connection_id" in updates:
+        new_connection_id = updates["connection_id"]
+        # Reset old connection if it was pointing back at this message
+        if old_connection_id and old_connection_id != new_connection_id:
+            old_conn = get_connection(db, old_connection_id)
+            if old_conn and old_conn.cold_message_id == msg_id:
+                old_conn.cold_message_sent = False
+                old_conn.cold_message_id = None
+                db.commit()
+        # Set new connection
+        if new_connection_id:
+            new_conn = get_connection(db, new_connection_id)
+            if new_conn:
+                new_conn.cold_message_sent = True
+                new_conn.cold_message_id = db_msg.id
+                db.commit()
     return db_msg
 
 def delete_cold_message(db: Session, msg_id: int):
     db_msg = get_cold_message(db, msg_id)
     if not db_msg:
         return False
+    # Reset the linked connection if this was its primary message
+    if db_msg.connection_id:
+        db_conn = get_connection(db, db_msg.connection_id)
+        if db_conn and db_conn.cold_message_id == msg_id:
+            db_conn.cold_message_sent = False
+            db_conn.cold_message_id = None
+            db.commit()
     db.delete(db_msg)
     db.commit()
     return True
@@ -466,3 +500,108 @@ def get_cold_message_stats(db: Session):
         reply_count=reply_count,
         reply_rate=reply_rate,
     )
+
+
+# ─── LinkedIn Connection CRUD ─────────────────────────────────────────
+
+def create_connection(db: Session, connection: schemas.LinkedInConnectionCreate):
+    data = connection.model_dump()
+    if not data.get("requested_on"):
+        data["requested_on"] = datetime.now()
+    db_conn = models.LinkedInConnection(**data)
+    db.add(db_conn)
+    db.commit()
+    db.refresh(db_conn)
+    return db_conn
+
+def get_connections(
+    db: Session,
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    cold_message_sent: Optional[bool] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+):
+    query = db.query(models.LinkedInConnection)
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                models.LinkedInConnection.contact_name.ilike(term),
+                models.LinkedInConnection.company_name.ilike(term),
+                models.LinkedInConnection.linkedin_profile_id.ilike(term),
+                models.LinkedInConnection.notes.ilike(term),
+            )
+        )
+    if status:
+        query = query.filter(models.LinkedInConnection.connection_status == status)
+    if category:
+        query = query.filter(models.LinkedInConnection.category == category)
+    if cold_message_sent is not None:
+        query = query.filter(models.LinkedInConnection.cold_message_sent == cold_message_sent)
+
+    sort_col = getattr(models.LinkedInConnection, sort_by, models.LinkedInConnection.created_at)
+    if sort_order == "asc":
+        query = query.order_by(sort_col.asc())
+    else:
+        query = query.order_by(sort_col.desc())
+    return query.all()
+
+def get_connection(db: Session, conn_id: int):
+    return db.query(models.LinkedInConnection).filter(models.LinkedInConnection.id == conn_id).first()
+
+def update_connection(db: Session, conn_id: int, data: schemas.LinkedInConnectionUpdate):
+    db_conn = get_connection(db, conn_id)
+    if not db_conn:
+        return None
+    updates = data.model_dump(exclude_unset=True)
+    # Auto-set accepted_on when status flips to Accepted and date not provided
+    if updates.get("connection_status") == "Accepted" and not updates.get("accepted_on") and not db_conn.accepted_on:
+        updates["accepted_on"] = datetime.now()
+    for field, value in updates.items():
+        setattr(db_conn, field, value)
+    db.commit()
+    db.refresh(db_conn)
+    return db_conn
+
+def delete_connection(db: Session, conn_id: int):
+    db_conn = get_connection(db, conn_id)
+    if not db_conn:
+        return False
+    db.delete(db_conn)
+    db.commit()
+    return True
+
+def get_connection_stats(db: Session):
+    total = db.query(models.LinkedInConnection).count()
+    pending = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.connection_status == "Pending"
+    ).count()
+    accepted = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.connection_status == "Accepted"
+    ).count()
+    withdrawn = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.connection_status == "Withdrawn"
+    ).count()
+    cold_sent = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.cold_message_sent == True
+    ).count()
+    accepted_no_msg = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.connection_status == "Accepted",
+        models.LinkedInConnection.cold_message_sent == False
+    ).count()
+    acceptance_rate = round((accepted / total) * 100, 1) if total > 0 else 0.0
+    return schemas.LinkedInConnectionStats(
+        total=total,
+        pending=pending,
+        accepted=accepted,
+        withdrawn=withdrawn,
+        cold_message_sent=cold_sent,
+        accepted_no_message=accepted_no_msg,
+        acceptance_rate=acceptance_rate,
+    )
+
+def get_all_connections_for_export(db: Session):
+    return db.query(models.LinkedInConnection).order_by(models.LinkedInConnection.created_at.desc()).all()
+

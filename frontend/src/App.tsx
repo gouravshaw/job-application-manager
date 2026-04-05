@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ApplicationList } from './components/ApplicationList';
 import { ColdMessages } from './components/ColdMessages';
+import { ConnectionRequests } from './components/ConnectionRequests';
 import { Sidebar } from './components/Sidebar';
 import { useTheme } from './contexts/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import './index.css';
 
+
 function AppContent() {
   // Initialize state from URL
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'cold-messages'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'cold-messages' | 'connection-requests'>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    return (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages') ? tab : 'dashboard';
+    return (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages' || tab === 'connection-requests') ? tab : 'dashboard';
   });
+
 
   const [initialFilter, setInitialFilter] = useState<{ type: string; value: string; timestamp?: number } | null>(null);
   const { isDark, toggleTheme } = useTheme();
@@ -30,12 +33,13 @@ function AppContent() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab');
-      if (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages') {
+      if (tab === 'applications' || tab === 'dashboard' || tab === 'cold-messages' || tab === 'connection-requests') {
         setActiveTab(tab);
       } else {
         setActiveTab('dashboard');
       }
     };
+
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -66,11 +70,16 @@ function AppContent() {
             <div className="animate-slideUp">
               <ApplicationList initialFilter={initialFilter} />
             </div>
+          ) : activeTab === 'connection-requests' ? (
+            <div className="animate-slideUp">
+              <ConnectionRequests onNavigate={setActiveTab} />
+            </div>
           ) : (
             <div className="animate-slideUp">
               <ColdMessages />
             </div>
           )}
+
         </div>
 
         {/* Footer */}

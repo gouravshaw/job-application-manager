@@ -71,6 +71,27 @@ class ColdMessage(Base):
     sent_date = Column(DateTime(timezone=True))
     got_reply = Column(Boolean, default=False)
     notes = Column(Text)
+    connection_id = Column(Integer, nullable=True)  # optional link to linkedin_connections.id
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+
+class LinkedInConnection(Base):
+    __tablename__ = "linkedin_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contact_name = Column(String, nullable=False, index=True)
+    linkedin_profile_id = Column(String)           # full URL or slug, e.g. linkedin.com/in/johndoe
+    company_name = Column(String)
+    category = Column(String)                      # 'Recruiter', 'Hiring Manager', 'Employee', 'Other'
+    connection_status = Column(String, default="Pending")  # 'Pending', 'Accepted', 'Withdrawn'
+    requested_on = Column(DateTime(timezone=True))
+    accepted_on = Column(DateTime(timezone=True))
+    cold_message_sent = Column(Boolean, default=False)
+    cold_message_id = Column(Integer, nullable=True)  # optional link to cold_messages.id
+    follow_up_date = Column(DateTime(timezone=True))
+    notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

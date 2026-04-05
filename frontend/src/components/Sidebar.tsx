@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { FaChartBar, FaBriefcase, FaSun, FaMoon, FaBars, FaTimes, FaRocket, FaEnvelope } from 'react-icons/fa';
+import { FaChartBar, FaBriefcase, FaSun, FaMoon, FaBars, FaTimes, FaRocket, FaEnvelope, FaUserPlus } from 'react-icons/fa';
+
 
 interface SidebarProps {
-      activeTab: 'dashboard' | 'applications' | 'cold-messages';
-      setActiveTab: (tab: 'dashboard' | 'applications' | 'cold-messages') => void;
+      activeTab: 'dashboard' | 'applications' | 'cold-messages' | 'connection-requests';
+      setActiveTab: (tab: 'dashboard' | 'applications' | 'cold-messages' | 'connection-requests') => void;
       isDark: boolean;
       toggleTheme: () => void;
 }
+
 
 export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: SidebarProps) => {
       const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +18,10 @@ export const Sidebar = ({ activeTab, setActiveTab, isDark, toggleTheme }: Sideba
       const navItems = [
             { id: 'dashboard', label: 'Dashboard', icon: FaChartBar },
             { id: 'applications', label: 'Applications', icon: FaBriefcase },
+            { id: 'connection-requests', label: 'Connection Requests', icon: FaUserPlus },
             { id: 'cold-messages', label: 'Cold Messages', icon: FaEnvelope },
       ] as const;
+
 
       return (
             <>
