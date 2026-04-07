@@ -229,6 +229,7 @@ export const connectionApi = {
     status?: string;
     category?: string;
     cold_message_sent?: boolean;
+    stage?: string;
     sort_by?: string;
     sort_order?: string;
   }): Promise<LinkedInConnection[]> => {
@@ -238,6 +239,7 @@ export const connectionApi = {
       if (filters.status) params.status = filters.status;
       if (filters.category) params.category = filters.category;
       if (filters.cold_message_sent !== undefined) params.cold_message_sent = filters.cold_message_sent;
+      if (filters.stage) params.stage = filters.stage;
       if (filters.sort_by) params.sort_by = filters.sort_by;
       if (filters.sort_order) params.sort_order = filters.sort_order;
     }
@@ -257,6 +259,14 @@ export const connectionApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/connections/${id}`);
+  },
+
+  checkDuplicate: async (name: string, company?: string, linkedinUrl?: string): Promise<{ exists: boolean; id?: number }> => {
+    const params: Record<string, string> = { name };
+    if (company) params.company = company;
+    if (linkedinUrl) params.linkedin_url = linkedinUrl;
+    const response = await api.get('/connections/check-duplicate', { params });
+    return response.data;
   },
 
   getStatistics: async (): Promise<LinkedInConnectionStats> => {

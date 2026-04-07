@@ -86,6 +86,7 @@ class LinkedInConnection(Base):
     company_name = Column(String)
     category = Column(String)                      # 'Recruiter', 'Hiring Manager', 'Employee', 'Other'
     connection_status = Column(String, default="Pending")  # 'Pending', 'Accepted', 'Withdrawn'
+    stage = Column(String, default="Requested")  # 'Need to Connect' | 'Requested'
     requested_on = Column(DateTime(timezone=True))
     accepted_on = Column(DateTime(timezone=True))
     cold_message_sent = Column(Boolean, default=False)

@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { JobApplicationCreate, JobApplication, STATUS_OPTIONS, WORK_TYPE_OPTIONS, APPLIED_ON_OPTIONS, REJECTION_STAGE_OPTIONS, NetworkingContact, COLD_MESSAGE_VIA_OPTIONS, COLD_CONTACT_CATEGORY_OPTIONS } from '../types';
-import { applicationApi } from '../services/api';
+import { applicationApi, connectionApi } from '../services/api';
 import { FaTimes, FaLinkedin, FaPlus, FaTrash, FaEnvelope, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { TagsInput } from './TagsInput';
 
@@ -52,6 +52,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [customAppliedOn, setCustomAppliedOn] = useState('');
   const [isCustomAppliedOn, setIsCustomAppliedOn] = useState(false);
+  const [autoAddToast, setAutoAddToast] = useState<string | null>(null);
 
   // Cold email — main contact — multi-email state
   const [contactEmailInput, setContactEmailInput] = useState('');
@@ -213,6 +214,61 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
     }));
   };
 
+  // Auto-add contacts from the saved application as "Need to Connect" entries
+  const autoAddContacts = async (savedFormData: JobApplicationCreate) => {
+    const contacts: { name: string; company: string; linkedin?: string; category?: string }[] = [];
+
+    // 1. Contact Person (main contact field)
+    if (savedFormData.contact_person?.trim()) {
+      contacts.push({
+        name: savedFormData.contact_person.trim(),
+        company: savedFormData.company_name,
+        linkedin: savedFormData.contact_linkedin?.trim() || undefined,
+        category: savedFormData.contact_cold_contact_category || undefined,
+      });
+    }
+
+    // 2. Networking contacts
+    if (Array.isArray(savedFormData.networking_contacts)) {
+      for (const nc of savedFormData.networking_contacts) {
+        if (nc.name?.trim()) {
+          contacts.push({
+            name: nc.name.trim(),
+            company: savedFormData.company_name,
+            linkedin: nc.linkedin?.trim() || undefined,
+            category: nc.cold_contact_category || undefined,
+          });
+        }
+      }
+    }
+
+    if (contacts.length === 0) return;
+
+    let addedCount = 0;
+    for (const c of contacts) {
+      try {
+        const check = await connectionApi.checkDuplicate(c.name, c.company, c.linkedin);
+        if (check.exists) continue; // skip duplicate
+        await connectionApi.create({
+          contact_name: c.name,
+          company_name: c.company || undefined,
+          linkedin_profile_id: c.linkedin || undefined,
+          category: c.category || undefined,
+          stage: 'Need to Connect',
+          connection_status: 'Pending',
+        });
+        addedCount++;
+      } catch (err) {
+        console.error('Failed to auto-add contact to connections:', err);
+      }
+    }
+
+    if (addedCount > 0) {
+      setAutoAddToast(`${addedCount} contact${addedCount > 1 ? 's' : ''} added to "Need to Connect"`);
+      setTimeout(() => setAutoAddToast(null), 4000);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -288,6 +344,8 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
 
         alert('Application added successfully!');
       }
+      // Auto-add contacts to "Need to Connect"
+      await autoAddContacts(cleanedData);
       onSuccess();
     } catch (error) {
       console.error('Error creating application:', error);
@@ -298,7 +356,28 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <>
+      {autoAddToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+          color: '#fff',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+          zIndex: 9999,
+          fontSize: '14px',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          <span>✓</span> {autoAddToast}
+        </div>
+      )}
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{isEdit ? 'Continue Applying' : 'Add New Application'}</h2>
@@ -1074,6 +1153,7 @@ export const ApplicationForm = ({ onSuccess, onCancel, initialData, isEdit = fal
         </form>
       </div>
     </div>
+    </>
   );
 };
 

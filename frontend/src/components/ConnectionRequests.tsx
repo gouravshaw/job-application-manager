@@ -65,6 +65,7 @@ const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
     cold_message_sent: initialData?.cold_message_sent || false,
     follow_up_date: initialData?.follow_up_date ? new Date(initialData.follow_up_date).toISOString().slice(0, 10) : '',
     notes: initialData?.notes || '',
+    stage: initialData?.stage || 'Requested',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -194,7 +195,8 @@ interface ConnectionRequestsProps {
 }
 
 export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
-  const [connections, setConnections] = useState<LinkedInConnection[]>([]);
+  const [connections, setConnections] = useState<LinkedInConnection[]>([]); // stage = 'Requested'
+  const [needToConnect, setNeedToConnect] = useState<LinkedInConnection[]>([]); // stage = 'Need to Connect'
   const [stats, setStats] = useState<LinkedInConnectionStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -204,6 +206,7 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
+  const [ntcCollapsed, setNtcCollapsed] = useState(false); // Need to Connect section collapsed state
 
   // Derive unique companies from full loaded list for the filter dropdown
   const companies = useMemo(() => {
@@ -220,15 +223,18 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
 
   const loadData = async () => {
     try {
-      const [conns, st] = await Promise.all([
+      const [requested, ntc, st] = await Promise.all([
         connectionApi.getAll({
           search: search || undefined,
           status: filterStatus || undefined,
           category: filterCategory || undefined,
+          stage: 'Requested',
         }),
+        connectionApi.getAll({ stage: 'Need to Connect' }),
         connectionApi.getStatistics(),
       ]);
-      setConnections(conns);
+      setConnections(requested);
+      setNeedToConnect(ntc);
       setStats(st);
     } catch (err) {
       console.error('Error loading connections:', err);
@@ -242,6 +248,15 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this connection request?')) return;
     await connectionApi.delete(id);
+    loadData();
+  };
+
+  const markAsSent = async (conn: LinkedInConnection) => {
+    await connectionApi.update(conn.id, {
+      stage: 'Requested',
+      connection_status: 'Pending',
+      requested_on: new Date().toISOString(),
+    });
     loadData();
   };
 
@@ -302,6 +317,16 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Need to Connect */}
+          <div className="relative overflow-hidden p-4 rounded-2xl border border-violet-100/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-900/40 dark:to-purple-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all"
+            style={{ animationDelay: '0ms' }}>
+            <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 tracking-widest uppercase mb-1">Need to Connect</p>
+            <p className="text-3xl font-extrabold text-violet-600 dark:text-violet-400">{stats.need_to_connect}</p>
+            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
+              <FaUserPlus className="text-white text-sm" />
+            </div>
+          </div>
+
           {/* Total */}
           <div className="relative overflow-hidden p-4 rounded-2xl border border-blue-100/50 dark:border-blue-800/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/40 dark:to-indigo-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all"
             style={{ animationDelay: '0ms' }} onClick={() => setFilterStatus('')}>
@@ -423,6 +448,93 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
           </p>
         )}
       </div>
+
+      {/* ── Need to Connect Section ── */}
+      {needToConnect.length > 0 && (
+        <div className="animate-slideUp" style={{ animationDelay: '200ms' }}>
+          <div
+            className="flex items-center justify-between px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border border-violet-100 dark:border-violet-700/40 cursor-pointer select-none"
+            onClick={() => setNtcCollapsed(c => !c)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg">
+                <FaUserPlus className="text-white text-sm" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg">Need to Connect</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Contacts saved from job applications — not yet reached out</p>
+              </div>
+              <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 dark:bg-violet-800/60 text-violet-700 dark:text-violet-300">
+                {needToConnect.length}
+              </span>
+            </div>
+            {ntcCollapsed ? <FaChevronDown className="text-gray-400" /> : <FaChevronUp className="text-gray-400" />}
+          </div>
+
+          {!ntcCollapsed && (
+            <div className="mt-3 space-y-3">
+              {needToConnect.map(conn => (
+                <div key={conn.id} className="glass-card rounded-2xl border border-violet-100/60 dark:border-violet-700/30 bg-gradient-to-br from-violet-50/60 to-white dark:from-violet-900/20 dark:to-slate-800/60 p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-lg hover:border-violet-200 dark:hover:border-violet-600 transition-all">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                    {conn.contact_name.charAt(0).toUpperCase()}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-bold text-gray-900 dark:text-white">{conn.contact_name}</span>
+                      {conn.category && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getCategoryColor(conn.category)}`}>
+                          {conn.category}
+                        </span>
+                      )}
+                    </div>
+                    {conn.company_name && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <FaBuilding className="text-[10px]" /> {conn.company_name}
+                      </p>
+                    )}
+                    {conn.linkedin_profile_id && (
+                      <a href={conn.linkedin_profile_id} target="_blank" rel="noreferrer"
+                        className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5"
+                        onClick={e => e.stopPropagation()}>
+                        <FaLinkedin className="text-[10px]" /> LinkedIn Profile <FaExternalLinkAlt className="text-[8px]" />
+                      </a>
+                    )}
+                    <p className="text-[11px] text-gray-400 mt-1">Added {formatDate(conn.created_at)}</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => markAsSent(conn)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-sm hover:shadow-violet-300/40 hover:scale-[1.02]"
+                      title="Mark as request sent — moves to main Connection Requests list"
+                    >
+                      <FaPaperPlane className="text-[10px]" /> Mark as Sent
+                    </button>
+                    <button
+                      onClick={() => { setEditingConn(conn); setShowForm(true); }}
+                      className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      title="Edit"
+                    >
+                      <FaEdit className="text-sm" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(conn.id)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      title="Delete"
+                    >
+                      <FaTrash className="text-sm" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Connection Cards */}
       {displayedConnections.length === 0 ? (

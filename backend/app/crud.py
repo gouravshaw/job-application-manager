@@ -520,6 +520,7 @@ def get_connections(
     status: Optional[str] = None,
     category: Optional[str] = None,
     cold_message_sent: Optional[bool] = None,
+    stage: Optional[str] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ):
@@ -540,6 +541,8 @@ def get_connections(
         query = query.filter(models.LinkedInConnection.category == category)
     if cold_message_sent is not None:
         query = query.filter(models.LinkedInConnection.cold_message_sent == cold_message_sent)
+    if stage:
+        query = query.filter(models.LinkedInConnection.stage == stage)
 
     sort_col = getattr(models.LinkedInConnection, sort_by, models.LinkedInConnection.created_at)
     if sort_order == "asc":
@@ -550,6 +553,35 @@ def get_connections(
 
 def get_connection(db: Session, conn_id: int):
     return db.query(models.LinkedInConnection).filter(models.LinkedInConnection.id == conn_id).first()
+
+
+def check_connection_duplicate(
+    db: Session,
+    contact_name: str,
+    company_name: Optional[str] = None,
+    linkedin_profile_id: Optional[str] = None,
+) -> Optional[models.LinkedInConnection]:
+    """Check if a matching connection already exists.
+    Matches on name (required) + company (if provided) + LinkedIn URL (if provided).
+    Returns the existing record or None.
+    """
+    query = db.query(models.LinkedInConnection).filter(
+        func.lower(models.LinkedInConnection.contact_name) == contact_name.lower()
+    )
+    if company_name:
+        query = query.filter(
+            func.lower(models.LinkedInConnection.company_name) == company_name.lower()
+        )
+    if linkedin_profile_id:
+        # Normalize by stripping trailing slashes for comparison
+        normalized = linkedin_profile_id.rstrip('/')
+        query = query.filter(
+            or_(
+                func.lower(models.LinkedInConnection.linkedin_profile_id) == normalized.lower(),
+                func.lower(models.LinkedInConnection.linkedin_profile_id) == (normalized.lower() + '/'),
+            )
+        )
+    return query.first()
 
 def update_connection(db: Session, conn_id: int, data: schemas.LinkedInConnectionUpdate):
     db_conn = get_connection(db, conn_id)
@@ -575,8 +607,12 @@ def delete_connection(db: Session, conn_id: int):
 
 def get_connection_stats(db: Session):
     total = db.query(models.LinkedInConnection).count()
+    need_to_connect = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.stage == "Need to Connect"
+    ).count()
     pending = db.query(models.LinkedInConnection).filter(
-        models.LinkedInConnection.connection_status == "Pending"
+        models.LinkedInConnection.connection_status == "Pending",
+        models.LinkedInConnection.stage == "Requested"
     ).count()
     accepted = db.query(models.LinkedInConnection).filter(
         models.LinkedInConnection.connection_status == "Accepted"
@@ -591,9 +627,14 @@ def get_connection_stats(db: Session):
         models.LinkedInConnection.connection_status == "Accepted",
         models.LinkedInConnection.cold_message_sent == False
     ).count()
-    acceptance_rate = round((accepted / total) * 100, 1) if total > 0 else 0.0
+    # Acceptance rate based on Requested-stage entries only
+    requested_total = db.query(models.LinkedInConnection).filter(
+        models.LinkedInConnection.stage == "Requested"
+    ).count()
+    acceptance_rate = round((accepted / requested_total) * 100, 1) if requested_total > 0 else 0.0
     return schemas.LinkedInConnectionStats(
         total=total,
+        need_to_connect=need_to_connect,
         pending=pending,
         accepted=accepted,
         withdrawn=withdrawn,

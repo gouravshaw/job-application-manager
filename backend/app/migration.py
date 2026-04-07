@@ -238,6 +238,17 @@ def migrate_database():
         print("STATUS: linkedin_connections table created")
     else:
         print("STATUS: linkedin_connections table already exists")
+        # Add stage column if it doesn't exist
+        cursor.execute("PRAGMA table_info(linkedin_connections)")
+        lc_columns = [col[1] for col in cursor.fetchall()]
+        if 'stage' not in lc_columns:
+            print("Adding stage column to linkedin_connections...")
+            cursor.execute("ALTER TABLE linkedin_connections ADD COLUMN stage TEXT DEFAULT 'Requested'")
+            # Existing connections were manually added (request already sent) — set to 'Requested'
+            cursor.execute("UPDATE linkedin_connections SET stage = 'Requested' WHERE stage IS NULL")
+            print("STATUS: stage column added to linkedin_connections")
+        else:
+            print("STATUS: linkedin_connections.stage already exists")
 
     conn.commit()
     conn.close()

@@ -414,19 +414,39 @@ def get_connection_stats(db: Session = Depends(get_db)):
 def create_connection(data: schemas.LinkedInConnectionCreate, db: Session = Depends(get_db)):
     return crud.create_connection(db, data)
 
+
+@app.get("/connections/check-duplicate")
+def check_connection_duplicate(
+    name: str,
+    company: Optional[str] = None,
+    linkedin_url: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """Check if a connection already exists by name + company + LinkedIn URL."""
+    existing = crud.check_connection_duplicate(
+        db,
+        contact_name=name,
+        company_name=company or None,
+        linkedin_profile_id=linkedin_url or None,
+    )
+    if existing:
+        return {"exists": True, "id": existing.id}
+    return {"exists": False}
+
 @app.get("/connections/", response_model=List[schemas.LinkedInConnection])
 def list_connections(
     search: Optional[str] = None,
     status: Optional[str] = None,
     category: Optional[str] = None,
     cold_message_sent: Optional[bool] = None,
+    stage: Optional[str] = None,
     sort_by: Optional[str] = "created_at",
     sort_order: Optional[str] = "desc",
     db: Session = Depends(get_db),
 ):
     return crud.get_connections(
         db, search=search, status=status, category=category,
-        cold_message_sent=cold_message_sent, sort_by=sort_by, sort_order=sort_order
+        cold_message_sent=cold_message_sent, stage=stage, sort_by=sort_by, sort_order=sort_order
     )
 
 @app.get("/connections/{conn_id}", response_model=schemas.LinkedInConnection)

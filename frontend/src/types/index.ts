@@ -224,6 +224,7 @@ export interface LinkedInConnection {
   company_name?: string;
   category?: string;        // 'Recruiter' | 'Hiring Manager' | 'Employee' | 'Other'
   connection_status: string; // 'Pending' | 'Accepted' | 'Withdrawn'
+  stage?: string;           // 'Need to Connect' | 'Requested'
   requested_on?: string;
   accepted_on?: string;
   cold_message_sent?: boolean;
@@ -240,6 +241,7 @@ export interface LinkedInConnectionCreate {
   company_name?: string;
   category?: string;
   connection_status?: string;
+  stage?: string;           // 'Need to Connect' | 'Requested'
   requested_on?: string;
   accepted_on?: string;
   cold_message_sent?: boolean;
@@ -250,6 +252,7 @@ export interface LinkedInConnectionCreate {
 
 export interface LinkedInConnectionStats {
   total: number;
+  need_to_connect: number;
   pending: number;
   accepted: number;
   withdrawn: number;

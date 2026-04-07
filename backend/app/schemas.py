@@ -156,6 +156,7 @@ class LinkedInConnectionBase(BaseModel):
     company_name: Optional[str] = None
     category: Optional[str] = None          # 'Recruiter', 'Hiring Manager', 'Employee', 'Other'
     connection_status: str = "Pending"      # 'Pending', 'Accepted', 'Withdrawn'
+    stage: Optional[str] = "Requested"     # 'Need to Connect' | 'Requested'
     requested_on: Optional[datetime] = None
     accepted_on: Optional[datetime] = None
     cold_message_sent: Optional[bool] = False
@@ -172,6 +173,7 @@ class LinkedInConnectionUpdate(BaseModel):
     company_name: Optional[str] = None
     category: Optional[str] = None
     connection_status: Optional[str] = None
+    stage: Optional[str] = None
     requested_on: Optional[datetime] = None
     accepted_on: Optional[datetime] = None
     cold_message_sent: Optional[bool] = None
@@ -189,6 +191,7 @@ class LinkedInConnection(LinkedInConnectionBase):
 
 class LinkedInConnectionStats(BaseModel):
     total: int
+    need_to_connect: int
     pending: int
     accepted: int
     withdrawn: int
