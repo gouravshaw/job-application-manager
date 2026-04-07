@@ -1,9 +1,9 @@
 import { useState, useEffect, FormEvent, useMemo } from 'react';
 import {
-  FaUserPlus, FaLinkedin, FaPlus, FaTimes, FaCheck, FaSearch,
+  FaUserPlus, FaLinkedin, FaPlus, FaTimes, FaSearch,
   FaTrash, FaEdit, FaChevronDown, FaChevronUp, FaEnvelope,
-  FaUsers, FaClock, FaPaperPlane, FaExternalLinkAlt, FaBell,
-  FaExclamationTriangle, FaBuilding,
+  FaUsers, FaClock, FaCheckCircle, FaPaperPlane, FaExternalLinkAlt, FaBell,
+  FaBuilding, FaCheck, FaTimesCircle,
 } from 'react-icons/fa';
 import {
   LinkedInConnection, LinkedInConnectionCreate, LinkedInConnectionStats,
@@ -11,7 +11,7 @@ import {
 } from '../types';
 import { connectionApi } from '../services/api';
 
-// ─── Helpers ──────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 const formatDate = (d?: string) => {
   if (!d) return '—';
@@ -25,26 +25,35 @@ const isOverdue = (dateStr?: string) => {
 
 const getCategoryColor = (cat?: string) => {
   const map: Record<string, string> = {
-    Recruiter: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
-    'Hiring Manager': 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700',
-    Employee: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700',
-    Other: 'bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600',
+    Recruiter: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+    'Hiring Manager': 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+    Employee: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300',
+    Other: 'bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300',
   };
   return map[cat || ''] || map.Other;
 };
 
 const getStatusConfig = (status: string) => {
   switch (status) {
-    case 'Accepted':
-      return { dot: 'bg-emerald-500', badge: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700', label: 'Accepted' };
-    case 'Withdrawn':
-      return { dot: 'bg-red-400', badge: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700', label: 'Withdrawn' };
-    default:
-      return { dot: 'bg-yellow-400', badge: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700', label: 'Pending' };
+    case 'Accepted': return {
+      dot: 'bg-emerald-500',
+      badge: 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/40 dark:to-green-800/40 text-emerald-700 dark:text-emerald-300',
+      icon: <FaCheckCircle className="text-emerald-500" />,
+    };
+    case 'Withdrawn': return {
+      dot: 'bg-red-400',
+      badge: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-800/40 text-red-700 dark:text-red-300',
+      icon: <FaTimesCircle className="text-red-400" />,
+    };
+    default: return {
+      dot: 'bg-yellow-400',
+      badge: 'bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/40 dark:to-amber-800/40 text-yellow-700 dark:text-yellow-300',
+      icon: <FaClock className="text-yellow-500" />,
+    };
   }
 };
 
-// ─── Add / Edit Form Modal ────────────────────────────────────────────
+// ─── Add / Edit Form Modal ────────────────────────────────────────────────
 
 interface FormProps {
   onSuccess: () => void;
@@ -164,13 +173,12 @@ const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-medium transition-all ${form.cold_message_sent
                 ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
                 : 'bg-gray-50 dark:bg-slate-800/40 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-400 hover:border-blue-300'
-                }`}>
+              }`}>
               <span className="flex items-center gap-2"><FaPaperPlane className={form.cold_message_sent ? 'text-blue-500' : 'text-gray-400'} /> Cold Message Sent?</span>
               <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${form.cold_message_sent ? 'bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-slate-600 text-gray-500 dark:text-gray-400'}`}>
                 {form.cold_message_sent ? 'Yes ✓' : 'No'}
               </span>
             </button>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tip: This also syncs automatically when you link a cold message to this connection</p>
           </div>
           <div>
             <label className={labelCls}>Notes</label>
@@ -188,38 +196,180 @@ const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
   );
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────
+// ─── Connection Card ──────────────────────────────────────────────────────
+
+interface ConnectionCardProps {
+  conn: LinkedInConnection;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMarkSent?: () => void;
+  isNTC?: boolean;
+}
+
+const ConnectionCard = ({ conn, onEdit, onDelete, onMarkSent, isNTC }: ConnectionCardProps) => {
+  const statusCfg = getStatusConfig(conn.connection_status);
+  const initials = conn.contact_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const overdue = isOverdue(conn.follow_up_date);
+
+  return (
+    <div className={`relative group flex flex-col bg-white dark:bg-slate-800/60 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:scale-[1.01] overflow-hidden ${
+      isNTC
+        ? 'border-violet-200/60 dark:border-violet-700/40 hover:border-violet-400/60 dark:hover:border-violet-500/60'
+        : 'border-slate-200/60 dark:border-slate-700/40 hover:border-blue-400/60 dark:hover:border-blue-500/60'
+    }`}>
+      {/* Left accent bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${
+        isNTC ? 'bg-gradient-to-b from-violet-500 to-purple-600' :
+        conn.connection_status === 'Accepted' ? 'bg-gradient-to-b from-emerald-400 to-green-500' :
+        conn.connection_status === 'Withdrawn' ? 'bg-gradient-to-b from-red-400 to-rose-500' :
+        'bg-gradient-to-b from-blue-400 to-indigo-500'
+      }`} />
+
+      <div className="flex flex-col h-full p-5 pl-6">
+        {/* Header: Avatar + Name + LinkedIn */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white shadow-md ${
+            isNTC ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+          }`}>
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm leading-tight truncate">{conn.contact_name}</h3>
+              {conn.linkedin_profile_id && (
+                <a
+                  href={conn.linkedin_profile_id.startsWith('http') ? conn.linkedin_profile_id : `https://${conn.linkedin_profile_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  onClick={e => e.stopPropagation()}
+                  title="View LinkedIn Profile"
+                >
+                  <FaLinkedin className="text-sm" />
+                </a>
+              )}
+            </div>
+            {conn.company_name && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                <FaBuilding className="text-[10px] flex-shrink-0" />
+                <span className="truncate">{conn.company_name}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {!isNTC && (
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${statusCfg.badge}`}>
+              {statusCfg.icon}
+              {conn.connection_status}
+            </span>
+          )}
+          {conn.category && (
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${getCategoryColor(conn.category)}`}>
+              {conn.category}
+            </span>
+          )}
+          {conn.cold_message_sent && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center gap-1">
+              <FaEnvelope className="text-[10px]" /> Messaged
+            </span>
+          )}
+        </div>
+
+        {/* Dates */}
+        <div className="text-xs text-gray-400 dark:text-gray-500 space-y-1 mb-3 flex-1">
+          {!isNTC && conn.requested_on && (
+            <p className="flex items-center gap-1.5">
+              <FaPaperPlane className="text-[10px]" />
+              Sent: {formatDate(conn.requested_on)}
+            </p>
+          )}
+          {isNTC && (
+            <p className="flex items-center gap-1.5">
+              <FaClock className="text-[10px]" />
+              Added: {formatDate(conn.created_at)}
+            </p>
+          )}
+          {conn.accepted_on && (
+            <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+              <FaCheck className="text-[10px]" />
+              Accepted: {formatDate(conn.accepted_on)}
+            </p>
+          )}
+          {conn.follow_up_date && (
+            <p className={`flex items-center gap-1.5 ${overdue ? 'text-red-500 dark:text-red-400 font-semibold' : 'text-orange-500 dark:text-orange-400'}`}>
+              <FaBell className="text-[10px]" />
+              Follow-up: {formatDate(conn.follow_up_date)} {overdue && '(Overdue)'}
+            </p>
+          )}
+          {conn.notes && (
+            <p className="text-gray-400 dark:text-gray-500 line-clamp-2 mt-1 italic">"{conn.notes}"</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-slate-700/50">
+          {isNTC && onMarkSent && (
+            <button
+              onClick={onMarkSent}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs font-semibold rounded-xl hover:from-violet-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md"
+            >
+              <FaPaperPlane className="text-[10px]" /> Mark as Sent
+            </button>
+          )}
+          <button
+            onClick={onEdit}
+            className="p-2 rounded-xl text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+            title="Edit"
+          >
+            <FaEdit className="text-sm" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 rounded-xl text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+            title="Delete"
+          >
+            <FaTrash className="text-sm" />
+          </button>
+          {conn.linkedin_profile_id && (
+            <a
+              href={conn.linkedin_profile_id.startsWith('http') ? conn.linkedin_profile_id : `https://${conn.linkedin_profile_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-xl text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+              title="Open LinkedIn"
+              onClick={e => e.stopPropagation()}
+            >
+              <FaExternalLinkAlt className="text-sm" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Page ─────────────────────────────────────────────────────────────
 
 interface ConnectionRequestsProps {
   onNavigate: (tab: 'dashboard' | 'applications' | 'cold-messages' | 'connection-requests') => void;
 }
 
 export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
-  const [connections, setConnections] = useState<LinkedInConnection[]>([]); // stage = 'Requested'
-  const [needToConnect, setNeedToConnect] = useState<LinkedInConnection[]>([]); // stage = 'Need to Connect'
+  const [connections, setConnections] = useState<LinkedInConnection[]>([]);
+  const [needToConnect, setNeedToConnect] = useState<LinkedInConnection[]>([]);
   const [stats, setStats] = useState<LinkedInConnectionStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingConn, setEditingConn] = useState<LinkedInConnection | undefined>(undefined);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  const [filterCompany, setFilterCompany] = useState('');
-  const [ntcCollapsed, setNtcCollapsed] = useState(false); // Need to Connect section collapsed state
-
-  // Derive unique companies from full loaded list for the filter dropdown
-  const companies = useMemo(() => {
-    const set = new Set<string>();
-    connections.forEach(c => { if (c.company_name) set.add(c.company_name); });
-    return Array.from(set).sort();
-  }, [connections]);
-
-  // Client-side company filter applied on top of server-filtered results
-  const displayedConnections = useMemo(() => {
-    if (!filterCompany) return connections;
-    return connections.filter(c => c.company_name === filterCompany);
-  }, [connections, filterCompany]);
+  const [ntcCollapsed, setNtcCollapsed] = useState(false);
+  // active stat card filter (for visual highlight)
+  const [activeFilter, setActiveFilter] = useState<string>('all');
 
   const loadData = async () => {
     try {
@@ -251,60 +401,52 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
     loadData();
   };
 
-  const markAsSent = async (conn: LinkedInConnection) => {
-    await connectionApi.update(conn.id, {
-      stage: 'Requested',
-      connection_status: 'Pending',
-      requested_on: new Date().toISOString(),
-    });
+  const handleMarkSent = async (conn: LinkedInConnection) => {
+    await connectionApi.update(conn.id, { stage: 'Requested', connection_status: 'Pending' });
     loadData();
   };
 
-  const quickToggleStatus = async (conn: LinkedInConnection) => {
-    const next = conn.connection_status === 'Pending' ? 'Accepted' : 'Pending';
-    await connectionApi.update(conn.id, { connection_status: next });
-    loadData();
+  // Stat card click → filter connections
+  const handleStatClick = (status: string) => {
+    setActiveFilter(status);
+    if (status === 'all') {
+      setFilterStatus('');
+    } else if (status === 'ntc') {
+      setFilterStatus('');
+      setNtcCollapsed(false);
+      setTimeout(() => document.getElementById('ntc-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    } else {
+      setFilterStatus(status);
+    }
   };
 
-  const quickToggleColdMessage = async (conn: LinkedInConnection) => {
-    await connectionApi.update(conn.id, { cold_message_sent: !conn.cold_message_sent });
-    loadData();
+  const clearFilters = () => {
+    setSearch('');
+    setFilterStatus('');
+    setFilterCategory('');
+    setActiveFilter('all');
   };
 
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setEditingConn(undefined);
-    loadData();
-  };
+  const hasFilters = search || filterStatus || filterCategory;
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {showForm && (
-        <ConnectionForm
-          onSuccess={handleFormSuccess}
-          onCancel={() => { setShowForm(false); setEditingConn(undefined); }}
-          initialData={editingConn}
-        />
-      )}
+    <div className="space-y-8 pb-20">
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* ── Header ── */}
+      <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-3">
-            <span className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/20">
-              <FaLinkedin className="text-white text-xl" />
-            </span>
-            Connection Requests
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 ml-14">Track LinkedIn connections sent for cold outreach</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Connection Requests</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {connections.length} active · {needToConnect.length} need to connect
+          </p>
         </div>
         <button
           onClick={() => { setEditingConn(undefined); setShowForm(true); }}
@@ -314,390 +456,283 @@ export const ConnectionRequests = ({ onNavigate }: ConnectionRequestsProps) => {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* ── Stat Cards (act as filters) ── */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
           {/* Need to Connect */}
-          <div className="relative overflow-hidden p-4 rounded-2xl border border-violet-100/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-900/40 dark:to-purple-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all"
-            style={{ animationDelay: '0ms' }}>
-            <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 tracking-widest uppercase mb-1">Need to Connect</p>
-            <p className="text-3xl font-extrabold text-violet-600 dark:text-violet-400">{stats.need_to_connect}</p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-              <FaUserPlus className="text-white text-sm" />
+          <div
+            className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer group border ${
+              activeFilter === 'ntc'
+                ? 'border-violet-400 dark:border-violet-500 ring-2 ring-violet-400/40 bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-800/60 dark:to-purple-800/60'
+                : 'border-violet-100/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/80 to-purple-50/80 dark:from-violet-900/40 dark:to-purple-900/40'
+            }`}
+            onClick={() => handleStatClick('ntc')}
+          >
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-violet-600 dark:text-violet-400 mb-1 tracking-widest uppercase opacity-80">Need to Connect</p>
+                <p className="text-4xl font-extrabold text-violet-600 dark:text-violet-400 mt-2">{stats.need_to_connect}</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaUserPlus className="text-white text-lg" />
+              </div>
             </div>
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all"></div>
           </div>
 
           {/* Total */}
-          <div className="relative overflow-hidden p-4 rounded-2xl border border-blue-100/50 dark:border-blue-800/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/40 dark:to-indigo-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all"
-            style={{ animationDelay: '0ms' }} onClick={() => setFilterStatus('')}>
-            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 tracking-widest uppercase mb-1">Total</p>
-            <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{stats.total}</p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg group-hover:scale-110 transition-transform">
-              <FaUsers className="text-white text-sm" />
+          <div
+            className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer group border ${
+              activeFilter === 'all'
+                ? 'border-blue-400 dark:border-blue-500 ring-2 ring-blue-400/40 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-800/60 dark:to-indigo-800/60'
+                : 'border-blue-100/50 dark:border-blue-800/30 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/40 dark:to-indigo-900/40'
+            }`}
+            onClick={() => handleStatClick('all')}
+          >
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 tracking-widest uppercase opacity-80">Total</p>
+                <p className="text-4xl font-extrabold text-gray-900 dark:text-white mt-2">{stats.total}</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaUsers className="text-white text-lg" />
+              </div>
             </div>
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
           </div>
 
           {/* Pending */}
-          <div className={`relative overflow-hidden p-4 rounded-2xl border border-yellow-100/50 dark:border-yellow-800/30 bg-gradient-to-br from-yellow-50/80 to-amber-50/80 dark:from-yellow-900/40 dark:to-amber-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all ${filterStatus === 'Pending' ? 'ring-2 ring-yellow-400' : ''}`}
-            style={{ animationDelay: '60ms' }} onClick={() => setFilterStatus(filterStatus === 'Pending' ? '' : 'Pending')}>
-            <p className="text-[10px] font-bold text-yellow-600 dark:text-yellow-400 tracking-widest uppercase mb-1">Pending</p>
-            <p className="text-3xl font-extrabold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-lg group-hover:scale-110 transition-transform">
-              <FaClock className="text-white text-sm" />
+          <div
+            className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer group border ${
+              activeFilter === 'Pending'
+                ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/40 bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-800/60 dark:to-yellow-800/60'
+                : 'border-amber-100/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/80 to-yellow-50/80 dark:from-amber-900/40 dark:to-yellow-900/40'
+            }`}
+            onClick={() => handleStatClick('Pending')}
+          >
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1 tracking-widest uppercase opacity-80">Pending</p>
+                <p className="text-4xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">{stats.pending}</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaClock className="text-white text-lg" />
+              </div>
             </div>
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-all"></div>
           </div>
 
           {/* Accepted */}
-          <div className={`relative overflow-hidden p-4 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/40 dark:to-green-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all ${filterStatus === 'Accepted' ? 'ring-2 ring-emerald-400' : ''}`}
-            style={{ animationDelay: '120ms' }} onClick={() => setFilterStatus(filterStatus === 'Accepted' ? '' : 'Accepted')}>
-            <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tracking-widest uppercase mb-1">Accepted</p>
-            <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.accepted}</p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg group-hover:scale-110 transition-transform">
-              <FaCheck className="text-white text-sm" />
-            </div>
-          </div>
-
-          {/* Cold Msg Sent */}
-          <div className="relative overflow-hidden p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/30 bg-gradient-to-br from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/40 dark:to-purple-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all"
-            style={{ animationDelay: '180ms' }} onClick={() => onNavigate('cold-messages')}>
-            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase mb-1">Msg Sent</p>
-            <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{stats.cold_message_sent}</p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-              <FaPaperPlane className="text-white text-sm" />
-            </div>
-          </div>
-
-          {/* ⚠️ Accepted, No Msg */}
-          {stats.accepted_no_message > 0 ? (
-            <div className="relative overflow-hidden p-4 rounded-2xl border border-orange-200 dark:border-orange-700/50 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/40 dark:to-amber-900/40 backdrop-blur-md group animate-slideUp cursor-pointer hover:scale-[1.02] transition-all ring-1 ring-orange-300 dark:ring-orange-600"
-              style={{ animationDelay: '240ms' }} onClick={() => { setFilterStatus('Accepted'); }}>
-              <p className="text-[10px] font-bold text-orange-600 dark:text-orange-400 tracking-widest uppercase mb-1 flex items-center gap-1">
-                <FaExclamationTriangle className="text-[9px]" /> No Msg Yet
-              </p>
-              <p className="text-3xl font-extrabold text-orange-600 dark:text-orange-400">{stats.accepted_no_message}</p>
-              <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg group-hover:scale-110 transition-transform animate-pulse">
-                <FaExclamationTriangle className="text-white text-sm" />
+          <div
+            className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer group border ${
+              activeFilter === 'Accepted'
+                ? 'border-emerald-400 dark:border-emerald-500 ring-2 ring-emerald-400/40 bg-gradient-to-br from-emerald-100 to-green-100 dark:from-emerald-800/60 dark:to-green-800/60'
+                : 'border-emerald-100/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/40 dark:to-green-900/40'
+            }`}
+            onClick={() => handleStatClick('Accepted')}
+          >
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-1 tracking-widest uppercase opacity-80">Accepted</p>
+                <p className="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">{stats.accepted}</p>
               </div>
-              <p className="text-[9px] text-orange-500 dark:text-orange-400 mt-1 font-medium">accepted, not messaged</p>
-            </div>
-          ) : (
-            <div className="relative overflow-hidden p-4 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/40 to-teal-50/40 dark:from-emerald-900/20 dark:to-teal-900/20 backdrop-blur-md group animate-slideUp"
-              style={{ animationDelay: '240ms' }}>
-              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 tracking-widest uppercase mb-1">All Messaged</p>
-              <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">✓</p>
-              <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg group-hover:scale-110 transition-transform">
-                <FaCheck className="text-white text-sm" />
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaCheckCircle className="text-white text-lg" />
               </div>
             </div>
-          )}
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+          </div>
+
+          {/* Msg Sent */}
+          <div
+            className={`relative overflow-hidden p-6 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer group border border-sky-100/50 dark:border-sky-800/30 bg-gradient-to-br from-sky-50/80 to-blue-50/80 dark:from-sky-900/40 dark:to-blue-900/40`}
+          >
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-sky-600 dark:text-sky-400 mb-1 tracking-widest uppercase opacity-80">Msg Sent</p>
+                <p className="text-4xl font-extrabold text-sky-600 dark:text-sky-400 mt-2">{stats.cold_message_sent}</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaPaperPlane className="text-white text-lg" />
+              </div>
+            </div>
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-sky-500/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-all"></div>
+          </div>
 
           {/* Accept Rate */}
-          <div className="relative overflow-hidden p-4 rounded-2xl border border-teal-100/50 dark:border-teal-800/30 bg-gradient-to-br from-teal-50/80 to-cyan-50/80 dark:from-teal-900/40 dark:to-cyan-900/40 backdrop-blur-md group animate-slideUp col-span-2 md:col-span-1"
-            style={{ animationDelay: '300ms' }}>
-            <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 tracking-widest uppercase mb-1">Accept Rate</p>
-            <p className="text-3xl font-extrabold text-teal-600 dark:text-teal-400">
-              {stats.acceptance_rate}<span className="text-xl ml-0.5">%</span>
-            </p>
-            <div className="absolute right-3 bottom-3 p-2 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg group-hover:scale-110 transition-transform">
-              <FaLinkedin className="text-white text-sm" />
+          <div className="relative overflow-hidden p-6 rounded-2xl border border-teal-100/50 dark:border-teal-800/30 bg-gradient-to-br from-teal-50/80 to-cyan-50/80 dark:from-teal-900/40 dark:to-cyan-900/40 group">
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-xs font-bold text-teal-600 dark:text-teal-400 mb-1 tracking-widest uppercase opacity-80">Accept Rate</p>
+                <p className="text-4xl font-extrabold text-teal-600 dark:text-teal-400 mt-2">
+                  {stats.acceptance_rate}<span className="text-2xl ml-1">%</span>
+                </p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform duration-300">
+                <FaLinkedin className="text-white text-lg" />
+              </div>
             </div>
+            <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-teal-500/10 rounded-full blur-2xl transition-all"></div>
           </div>
+
         </div>
       )}
 
-      {/* Search & Filter Bar */}
-      <div className="glass-card p-4 rounded-2xl animate-slideUp" style={{ animationDelay: '360ms' }}>
-        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* ── Search & Filters ── */}
+      <div className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/40 p-4 space-y-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          {/* Search */}
+          <div className="flex-1 min-w-[220px] relative">
+            <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
             <input
-              type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, company, LinkedIn URL..."
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400"
+              type="text"
+              placeholder="Search by name, company, LinkedIn…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-slate-600 transition-all"
             />
           </div>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+
+          {/* Status filter */}
+          <select
+            value={filterStatus}
+            onChange={e => { setFilterStatus(e.target.value); setActiveFilter(e.target.value || 'all'); }}
+            className="px-3 py-2.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          >
             <option value="">All Statuses</option>
-            {CONNECTION_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            {CONNECTION_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-            className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
+
+          {/* Category filter */}
+          <select
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+            className="px-3 py-2.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          >
             <option value="">All Categories</option>
-            {CONNECTION_CATEGORY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            {CONNECTION_CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          {companies.length > 0 && (
-            <select value={filterCompany} onChange={e => setFilterCompany(e.target.value)}
-              className="px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-white">
-              <option value="">All Companies</option>
-              {companies.map(c => <option key={c} value={c}><FaBuilding className="inline" /> {c}</option>)}
-            </select>
-          )}
-          {(search || filterStatus || filterCategory || filterCompany) && (
+
+          {/* Clear */}
+          {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setFilterStatus(''); setFilterCategory(''); setFilterCompany(''); }}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 bg-white dark:bg-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-colors"
             >
               <FaTimes className="text-xs" /> Clear
             </button>
           )}
         </div>
-        {filterCompany && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1 flex items-center gap-1.5">
-            <FaBuilding className="text-[10px]" /> Showing connections at <strong>{filterCompany}</strong>
+
+        {/* Active filter indicator */}
+        {(filterStatus || filterCategory) && (
+          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
+            Filtering by: {[filterStatus, filterCategory].filter(Boolean).join(' · ')}
           </p>
         )}
       </div>
 
       {/* ── Need to Connect Section ── */}
       {needToConnect.length > 0 && (
-        <div className="animate-slideUp" style={{ animationDelay: '200ms' }}>
+        <div id="ntc-section" className="space-y-4 animate-slideUp">
+          {/* Section header */}
           <div
-            className="flex items-center justify-between px-5 py-3 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/30 dark:to-purple-900/30 border border-violet-100 dark:border-violet-700/40 cursor-pointer select-none"
+            className="flex items-center justify-between px-5 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 cursor-pointer select-none shadow-lg shadow-violet-500/20"
             onClick={() => setNtcCollapsed(c => !c)}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg">
+              <div className="p-2 bg-white/20 rounded-xl">
                 <FaUserPlus className="text-white text-sm" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-white text-lg">Need to Connect</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Contacts saved from job applications — not yet reached out</p>
+                <h3 className="font-bold text-white">Need to Connect</h3>
+                <p className="text-xs text-violet-200">Contacts from job applications — not yet reached out</p>
               </div>
-              <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 dark:bg-violet-800/60 text-violet-700 dark:text-violet-300">
-                {needToConnect.length}
-              </span>
+              <span className="ml-3 bg-white/25 text-white text-xs font-bold px-2.5 py-1 rounded-full">{needToConnect.length}</span>
             </div>
-            {ntcCollapsed ? <FaChevronDown className="text-gray-400" /> : <FaChevronUp className="text-gray-400" />}
+            <div className="text-white/80 hover:text-white transition-colors">
+              {ntcCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+            </div>
           </div>
 
+          {/* NTC Cards Grid */}
           {!ntcCollapsed && (
-            <div className="mt-3 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {needToConnect.map(conn => (
-                <div key={conn.id} className="glass-card rounded-2xl border border-violet-100/60 dark:border-violet-700/30 bg-gradient-to-br from-violet-50/60 to-white dark:from-violet-900/20 dark:to-slate-800/60 p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-lg hover:border-violet-200 dark:hover:border-violet-600 transition-all">
-                  {/* Avatar */}
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                    {conn.contact_name.charAt(0).toUpperCase()}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="font-bold text-gray-900 dark:text-white">{conn.contact_name}</span>
-                      {conn.category && (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getCategoryColor(conn.category)}`}>
-                          {conn.category}
-                        </span>
-                      )}
-                    </div>
-                    {conn.company_name && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        <FaBuilding className="text-[10px]" /> {conn.company_name}
-                      </p>
-                    )}
-                    {conn.linkedin_profile_id && (
-                      <a href={conn.linkedin_profile_id} target="_blank" rel="noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5"
-                        onClick={e => e.stopPropagation()}>
-                        <FaLinkedin className="text-[10px]" /> LinkedIn Profile <FaExternalLinkAlt className="text-[8px]" />
-                      </a>
-                    )}
-                    <p className="text-[11px] text-gray-400 mt-1">Added {formatDate(conn.created_at)}</p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => markAsSent(conn)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-semibold rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-sm hover:shadow-violet-300/40 hover:scale-[1.02]"
-                      title="Mark as request sent — moves to main Connection Requests list"
-                    >
-                      <FaPaperPlane className="text-[10px]" /> Mark as Sent
-                    </button>
-                    <button
-                      onClick={() => { setEditingConn(conn); setShowForm(true); }}
-                      className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                      title="Edit"
-                    >
-                      <FaEdit className="text-sm" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(conn.id)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      title="Delete"
-                    >
-                      <FaTrash className="text-sm" />
-                    </button>
-                  </div>
-                </div>
+                <ConnectionCard
+                  key={conn.id}
+                  conn={conn}
+                  isNTC
+                  onEdit={() => { setEditingConn(conn); setShowForm(true); }}
+                  onDelete={() => handleDelete(conn.id)}
+                  onMarkSent={() => handleMarkSent(conn)}
+                />
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Connection Cards */}
-      {displayedConnections.length === 0 ? (
-        <div className="text-center py-20 glass-card rounded-2xl animate-slideUp">
-          <div className="p-5 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
-            <FaUserPlus className="text-4xl text-blue-500" />
+      {/* ── Active Connections Grid ── */}
+      <div className="space-y-4">
+        {/* Section header */}
+        {needToConnect.length > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md">
+              <FaUsers className="text-white text-sm" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 dark:text-white">Active Connections</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Requests sent · tracking outreach progress</p>
+            </div>
+            <span className="ml-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full">{connections.length}</span>
           </div>
-          <h3 className="text-xl font-semibold text-gray-500 dark:text-gray-400 mb-2">No connection requests found</h3>
-          <p className="text-gray-400 dark:text-gray-500 mb-6 max-w-sm mx-auto">
-            {(search || filterStatus || filterCategory || filterCompany)
-              ? 'Try adjusting your filters'
-              : 'Start tracking your LinkedIn connections sent for cold outreach'}
-          </p>
-          {!(search || filterStatus || filterCategory || filterCompany) && (
-            <button onClick={() => { setEditingConn(undefined); setShowForm(true); }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:scale-[1.02] transition-all">
-              <FaPlus /> Add First Connection
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3 animate-slideUp" style={{ animationDelay: '420ms' }}>
-          {displayedConnections.map(conn => {
-            const statusCfg = getStatusConfig(conn.connection_status);
-            const overdue = isOverdue(conn.follow_up_date) && conn.connection_status !== 'Accepted';
-            const needsMessage = conn.connection_status === 'Accepted' && !conn.cold_message_sent;
+        )}
 
-            return (
-              <div key={conn.id} className="glass-card rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg">
-                {/* Attention stripe for accepted + no message */}
-                {needsMessage && (
-                  <div className="h-1 w-full bg-gradient-to-r from-orange-400 to-amber-400 animate-pulse" />
-                )}
+        {connections.length === 0 ? (
+          <div className="text-center py-16 px-6 bg-white dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
+              <FaUsers className="text-2xl text-blue-500 dark:text-blue-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              {hasFilters ? 'No connections match your filters' : 'No connection requests yet'}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
+              {hasFilters ? 'Try adjusting your search or filter criteria.' : 'Start tracking your LinkedIn outreach by adding a connection request.'}
+            </p>
+            {hasFilters ? (
+              <button onClick={clearFilters} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors text-sm">
+                Clear Filters
+              </button>
+            ) : (
+              <button onClick={() => { setEditingConn(undefined); setShowForm(true); }} className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-medium transition-all shadow-md text-sm flex items-center gap-2 mx-auto">
+                <FaPlus className="text-xs" /> Add Your First Connection
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {connections.map(conn => (
+              <ConnectionCard
+                key={conn.id}
+                conn={conn}
+                onEdit={() => { setEditingConn(conn); setShowForm(true); }}
+                onDelete={() => handleDelete(conn.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-                <div className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="mt-1.5 flex-shrink-0">
-                      <span className={`w-2.5 h-2.5 rounded-full block ${statusCfg.dot}`} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                        <h4 className="text-lg font-bold text-gray-900 dark:text-white">{conn.contact_name}</h4>
-                        {conn.company_name && (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">@ {conn.company_name}</span>
-                        )}
-                        {conn.linkedin_profile_id && (
-                          <a href={conn.linkedin_profile_id.startsWith('http') ? conn.linkedin_profile_id : `https://${conn.linkedin_profile_id}`}
-                            target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                            onClick={e => e.stopPropagation()}>
-                            <FaLinkedin /> View Profile <FaExternalLinkAlt className="text-[9px]" />
-                          </a>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Status badge */}
-                        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-semibold border ${statusCfg.badge}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} /> {statusCfg.label}
-                        </span>
-
-                        {/* Category badge */}
-                        {conn.category && (
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${getCategoryColor(conn.category)}`}>
-                            {conn.category}
-                          </span>
-                        )}
-
-                        {/* Cold message sent badge — clickable if linked to a message */}
-                        {conn.cold_message_sent && (
-                          <button
-                            onClick={() => onNavigate('cold-messages')}
-                            title="View in Cold Messages"
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold border bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 hover:bg-indigo-200 dark:hover:bg-indigo-800/60 transition-colors cursor-pointer"
-                          >
-                            <FaEnvelope className="text-[10px]" />
-                            {conn.cold_message_id ? 'Cold Msg Sent ↗' : 'Cold Msg Sent'}
-                          </button>
-                        )}
-
-                        {/* ⚠️ Needs message badge */}
-                        {needsMessage && (
-                          <button
-                            onClick={() => onNavigate('cold-messages')}
-                            title="Go to Cold Messages to send a message"
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold border bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-200 dark:hover:bg-orange-800/60 transition-colors cursor-pointer animate-pulse"
-                          >
-                            <FaExclamationTriangle className="text-[10px]" /> Send a cold message! ↗
-                          </button>
-                        )}
-
-                        {/* Follow-up badge */}
-                        {conn.follow_up_date && (
-                          <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold border ${overdue
-                            ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700 animate-pulse'
-                            : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700'
-                            }`}>
-                            <FaBell className="text-[10px]" />
-                            {overdue ? 'Overdue: ' : 'Follow up: '}{formatDate(conn.follow_up_date)}
-                          </span>
-                        )}
-
-                        {/* Dates */}
-                        <span className="text-xs text-gray-400 dark:text-gray-500">Sent {formatDate(conn.requested_on)}</span>
-                        {conn.accepted_on && (
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400">• Accepted {formatDate(conn.accepted_on)}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Quick actions */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button onClick={() => quickToggleStatus(conn)}
-                        title={conn.connection_status === 'Pending' ? 'Mark as Accepted' : 'Mark as Pending'}
-                        className={`p-2 rounded-lg text-xs font-medium transition-colors ${conn.connection_status === 'Accepted'
-                          ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                          : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                          }`}>
-                        <FaCheck />
-                      </button>
-                      <button onClick={() => quickToggleColdMessage(conn)}
-                        title={conn.cold_message_sent ? 'Unmark cold message sent' : 'Mark cold message sent (manual)'}
-                        className={`p-2 rounded-lg transition-colors ${conn.cold_message_sent
-                          ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40'
-                          : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
-                          }`}>
-                        <FaEnvelope />
-                      </button>
-                      <button onClick={() => { setEditingConn(conn); setShowForm(true); }}
-                        title="Edit" className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                        <FaEdit />
-                      </button>
-                      <button onClick={() => handleDelete(conn.id)}
-                        title="Delete" className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                        <FaTrash />
-                      </button>
-                      {conn.notes && (
-                        <button onClick={() => setExpandedId(expandedId === conn.id ? null : conn.id)}
-                          title="Toggle notes" className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                          {expandedId === conn.id ? <FaChevronUp /> : <FaChevronDown />}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  {expandedId === conn.id && conn.notes && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 ml-6">
-                      <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1.5">Notes</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{conn.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Accepted accent bar */}
-                {conn.connection_status === 'Accepted' && !needsMessage && (
-                  <div className="h-0.5 w-full bg-gradient-to-r from-emerald-400 to-teal-400" />
-                )}
-              </div>
-            );
-          })}
-        </div>
+      {/* ── Add/Edit Modal ── */}
+      {showForm && (
+        <ConnectionForm
+          initialData={editingConn}
+          onSuccess={() => { setShowForm(false); setEditingConn(undefined); loadData(); }}
+          onCancel={() => { setShowForm(false); setEditingConn(undefined); }}
+        />
       )}
     </div>
   );
