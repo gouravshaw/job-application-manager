@@ -246,6 +246,18 @@ def export_to_excel(db: Session = Depends(get_db)):
                 tags_raw = []
         tags_str = ", ".join(tags_raw) if tags_raw else ""
 
+        # Networking contacts (JSON list of {name, linkedin_url, ...})
+        net_contacts = app.networking_contacts or []
+        if isinstance(net_contacts, str):
+            try:
+                net_contacts = _json.loads(net_contacts)
+            except Exception:
+                net_contacts = []
+        net_contacts_str = "; ".join(
+            f"{c.get('name', '')} ({c.get('linkedin_url', c.get('email', ''))})".strip("()")
+            for c in net_contacts if isinstance(c, dict)
+        ) if net_contacts else ""
+
         apps_data.append({
             "ID": app.id,
             "Company Name": app.company_name,
@@ -265,13 +277,23 @@ def export_to_excel(db: Session = Depends(get_db)):
             "Job URL": app.job_url or "",
             "Contact Person": app.contact_person or "",
             "Contact Email": app.contact_email or "",
+            "Contact LinkedIn": app.contact_linkedin or "",
+            "Cold Outreach Sent": "Yes" if app.contact_cold_message_sent else "No",
+            "Cold Outreach Via": app.contact_cold_message_via or "",
+            "Cold Contact Category": app.contact_cold_contact_category or "",
+            "Cold Contact Email": app.contact_cold_contact_email or "",
+            "Cold Message Body": app.contact_cold_message_body or "",
+            "Networking Contacts": net_contacts_str,
+            "References": app.references or "",
             "CV Uploaded": "Yes" if app.cv_filename else "No",
             "Cover Letter Uploaded": "Yes" if app.coverletter_filename else "No",
             "Interview Notes": app.interview_notes or "",
+            "Interview Questions": app.interview_questions or "",
             "Notes": app.notes or "",
             "Job Description": app.job_description or "",
             "Archived": "Yes" if app.is_archived else "No",
             "Created At": app.created_at.strftime("%Y-%m-%d") if app.created_at else "",
+            "Updated At": app.updated_at.strftime("%Y-%m-%d") if app.updated_at else "",
         })
 
     # ── Sheet 2: Cold Messages ───────────────────────────────────────────
@@ -289,8 +311,10 @@ def export_to_excel(db: Session = Depends(get_db)):
             "Message Body": msg.message_body or "",
             "Sent Date": msg.sent_date.strftime("%Y-%m-%d") if msg.sent_date else "",
             "Got Reply": "Yes" if msg.got_reply else "No",
+            "Linked Connection ID": msg.connection_id or "",
             "Notes": msg.notes or "",
             "Created At": msg.created_at.strftime("%Y-%m-%d") if msg.created_at else "",
+            "Updated At": msg.updated_at.strftime("%Y-%m-%d") if msg.updated_at else "",
         })
 
     # ── Build Excel ──────────────────────────────────────────────────────
@@ -315,7 +339,7 @@ def export_to_excel(db: Session = Depends(get_db)):
         df_apps.to_excel(writer, sheet_name='Job Applications', index=False)
         style_sheet(writer.sheets['Job Applications'], df_apps)
 
-        df_cm = pd.DataFrame(cm_data) if cm_data else pd.DataFrame(columns=["ID","Contact Name","Company","Contact Email","Contact LinkedIn","Via","Category","Subject","Message Body","Sent Date","Got Reply","Notes","Created At"])
+        df_cm = pd.DataFrame(cm_data) if cm_data else pd.DataFrame(columns=["ID","Contact Name","Company","Contact Email","Contact LinkedIn","Via","Category","Subject","Message Body","Sent Date","Got Reply","Linked Connection ID","Notes","Created At","Updated At"])
         df_cm.to_excel(writer, sheet_name='Cold Messages', index=False)
         style_sheet(writer.sheets['Cold Messages'], df_cm)
 
@@ -328,17 +352,20 @@ def export_to_excel(db: Session = Depends(get_db)):
                 "Company": c.company_name or "",
                 "LinkedIn Profile": c.linkedin_profile_id or "",
                 "Category": c.category or "",
+                "Stage": c.stage or "Requested",
                 "Status": c.connection_status,
                 "Cold Message Sent": "Yes" if c.cold_message_sent else "No",
+                "Linked Cold Message ID": c.cold_message_id or "",
                 "Requested On": c.requested_on.strftime("%Y-%m-%d") if c.requested_on else "",
                 "Accepted On": c.accepted_on.strftime("%Y-%m-%d") if c.accepted_on else "",
                 "Follow Up Date": c.follow_up_date.strftime("%Y-%m-%d") if c.follow_up_date else "",
                 "Notes": c.notes or "",
                 "Created At": c.created_at.strftime("%Y-%m-%d") if c.created_at else "",
+                "Updated At": c.updated_at.strftime("%Y-%m-%d") if c.updated_at else "",
             }
             for c in connections
         ]
-        conn_cols = ["ID","Contact Name","Company","LinkedIn Profile","Category","Status","Cold Message Sent","Requested On","Accepted On","Follow Up Date","Notes","Created At"]
+        conn_cols = ["ID","Contact Name","Company","LinkedIn Profile","Category","Stage","Status","Cold Message Sent","Linked Cold Message ID","Requested On","Accepted On","Follow Up Date","Notes","Created At","Updated At"]
         df_conn = pd.DataFrame(conn_data) if conn_data else pd.DataFrame(columns=conn_cols)
         df_conn.to_excel(writer, sheet_name='LinkedIn Connections', index=False)
         style_sheet(writer.sheets['LinkedIn Connections'], df_conn)

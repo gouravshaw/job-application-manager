@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 import {
   LinkedInConnection, LinkedInConnectionCreate, LinkedInConnectionStats,
-  CONNECTION_STATUS_OPTIONS, CONNECTION_CATEGORY_OPTIONS,
+  CONNECTION_CATEGORY_OPTIONS,
 } from '../types';
 import { connectionApi } from '../services/api';
 
@@ -35,6 +35,11 @@ const getCategoryColor = (cat?: string) => {
 
 const getStatusConfig = (status: string) => {
   switch (status) {
+    case 'Need to Connect': return {
+      dot: 'bg-violet-500',
+      badge: 'bg-gradient-to-br from-violet-50 to-purple-100 dark:from-violet-900/40 dark:to-purple-800/40 text-violet-700 dark:text-violet-300',
+      icon: <FaUserPlus className="text-violet-500" />,
+    };
     case 'Accepted': return {
       dot: 'bg-emerald-500',
       badge: 'bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-900/40 dark:to-green-800/40 text-emerald-700 dark:text-emerald-300',
@@ -45,7 +50,7 @@ const getStatusConfig = (status: string) => {
       badge: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-800/40 text-red-700 dark:text-red-300',
       icon: <FaTimesCircle className="text-red-400" />,
     };
-    default: return {
+    default: return { // Pending
       dot: 'bg-yellow-400',
       badge: 'bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/40 dark:to-amber-800/40 text-yellow-700 dark:text-yellow-300',
       icon: <FaClock className="text-yellow-500" />,
@@ -61,14 +66,22 @@ interface FormProps {
   initialData?: LinkedInConnection;
 }
 
+// Need to Connect → Pending → Accepted / Withdrawn
+const CONNECTION_STATUS_OPTIONS = ['Need to Connect', 'Pending', 'Accepted', 'Withdrawn'];
+
 const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
   const todayStr = new Date().toISOString().slice(0, 16);
+  // Derive the effective status to show: NTC cards display 'Need to Connect'
+  const effectiveStatus = initialData?.stage === 'Need to Connect'
+    ? 'Need to Connect'
+    : (initialData?.connection_status || 'Pending');
+
   const [form, setForm] = useState<LinkedInConnectionCreate>({
     contact_name: initialData?.contact_name || '',
     linkedin_profile_id: initialData?.linkedin_profile_id || '',
     company_name: initialData?.company_name || '',
     category: initialData?.category || '',
-    connection_status: initialData?.connection_status || 'Pending',
+    connection_status: effectiveStatus,
     requested_on: initialData?.requested_on ? new Date(initialData.requested_on).toISOString().slice(0, 16) : todayStr,
     accepted_on: initialData?.accepted_on ? new Date(initialData.accepted_on).toISOString().slice(0, 16) : '',
     cold_message_sent: initialData?.cold_message_sent || false,
@@ -78,8 +91,16 @@ const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const set = (field: keyof LinkedInConnectionCreate, value: unknown) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  const set = (field: keyof LinkedInConnectionCreate, value: unknown) => {
+    setForm(prev => {
+      const next = { ...prev, [field]: value };
+      // Keep stage in sync with status automatically
+      if (field === 'connection_status') {
+        next.stage = value === 'Need to Connect' ? 'Need to Connect' : 'Requested';
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -148,9 +169,14 @@ const ConnectionForm = ({ onSuccess, onCancel, initialData }: FormProps) => {
             </div>
             <div>
               <label className={labelCls}>Connection Status</label>
-              <select value={form.connection_status || 'Pending'} onChange={e => set('connection_status', e.target.value)} className={inputCls}>
+              <select value={form.connection_status} onChange={e => set('connection_status', e.target.value)} className={inputCls}>
                 {CONNECTION_STATUS_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
+              {form.connection_status !== 'Need to Connect' && effectiveStatus === 'Need to Connect' && (
+                <p className="text-xs text-violet-600 dark:text-violet-400 mt-1 flex items-center gap-1">
+                  ✦ Saving will move this contact to Active Connections
+                </p>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -207,7 +233,9 @@ interface ConnectionCardProps {
 }
 
 const ConnectionCard = ({ conn, onEdit, onDelete, onMarkSent, isNTC }: ConnectionCardProps) => {
-  const statusCfg = getStatusConfig(conn.connection_status);
+  // NTC cards always display 'Need to Connect' regardless of what's stored in connection_status
+  const displayStatus = isNTC ? 'Need to Connect' : conn.connection_status;
+  const statusCfg = getStatusConfig(displayStatus);
   const initials = conn.contact_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   const overdue = isOverdue(conn.follow_up_date);
 
@@ -260,12 +288,10 @@ const ConnectionCard = ({ conn, onEdit, onDelete, onMarkSent, isNTC }: Connectio
 
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {!isNTC && (
-            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${statusCfg.badge}`}>
-              {statusCfg.icon}
-              {conn.connection_status}
-            </span>
-          )}
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${statusCfg.badge}`}>
+            {statusCfg.icon}
+            {displayStatus}
+          </span>
           {conn.category && (
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${getCategoryColor(conn.category)}`}>
               {conn.category}
