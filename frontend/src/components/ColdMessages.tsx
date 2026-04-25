@@ -2,8 +2,8 @@ import React, { useState, useEffect, FormEvent } from 'react';
 
 import {
   FaEnvelope, FaLinkedin, FaPlus, FaTimes, FaReply, FaChartPie,
-  FaPaperPlane, FaChevronDown, FaChevronUp, FaTrash, FaEdit, FaSearch,
-  FaUserPlus, FaLink,
+  FaPaperPlane, FaTrash, FaEdit, FaSearch,
+  FaUserPlus, FaLink, FaEye, FaBuilding, FaClock,
 } from 'react-icons/fa';
 import {
   ColdMessage, ColdMessageCreate, ColdMessageStats, COLD_VIA_OPTIONS,
@@ -241,7 +241,7 @@ export const ColdMessages = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMsg, setEditingMsg] = useState<ColdMessage | undefined>(undefined);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [selectedMsg, setSelectedMsg] = useState<ColdMessage | null>(null);
   const [search, setSearch] = useState('');
   const [filterVia, setFilterVia] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -466,96 +466,203 @@ export const ColdMessages = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-3 animate-slideUp" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-slideUp" style={{ animationDelay: '600ms', animationFillMode: 'both' }}>
           {messages.map(msg => {
-            const linkedConn = msg.connection_id ? connMap[msg.connection_id] : undefined;
             return (
-              <div key={msg.id} className="glass-card rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg">
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    {/* Left: info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 flex-wrap mb-2">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{msg.contact_name}</h4>
-                        {msg.company_name && (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">@ {msg.company_name}</span>
-                        )}
-                        {msg.got_reply && (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-semibold">
-                            <FaReply className="text-[10px]" /> Replied
-                          </span>
-                        )}
-                        {/* Linked connection badge */}
-                        {linkedConn && (
-                          <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
-                            <FaUserPlus className="text-[10px]" />
-                            Linked: {linkedConn.contact_name}{linkedConn.company_name ? ` @ ${linkedConn.company_name}` : ''}
-                          </span>
-                        )}
+              <div 
+                key={msg.id} 
+                onClick={() => setSelectedMsg(msg)}
+                className="glass-card rounded-2xl overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl p-5 flex flex-col cursor-pointer h-full border-l-4"
+                style={{ borderLeftColor: msg.got_reply ? '#22c55e' : (msg.via === 'Email' ? '#6366f1' : '#3b82f6') }}
+              >
+                <div className="flex-1 flex flex-col">
+                  {/* Header: Name and Company */}
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-1">{msg.contact_name}</h3>
+                    {msg.company_name && (
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mb-2">
+                        <FaBuilding className="text-gray-400 flex-shrink-0" />
+                        <span className="font-medium truncate">{msg.company_name}</span>
                       </div>
-
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${getViaBadgeColor(msg.via)}`}>
-                          {getViaIcon(msg.via)} {msg.via}
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${getViaBadgeColor(msg.via)}`}>
+                        {getViaIcon(msg.via)} {msg.via}
+                      </span>
+                      {msg.got_reply && (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-semibold shadow-sm">
+                          <FaReply className="text-[10px]" /> Replied
                         </span>
-                        {msg.category && (
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getCategoryBadgeColor(msg.category)}`}>
-                            {msg.category}
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
-                          {formatDate(msg.sent_date)}
-                        </span>
-                      </div>
-
-                      {msg.subject && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-                          <strong>Subject:</strong> {msg.subject}
-                        </p>
-                      )}
-                      {msg.contact_email && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{msg.contact_email}</p>
-                      )}
-                    </div>
-
-                    {/* Right: actions */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button onClick={() => { setEditingMsg(msg); setShowForm(true); }}
-                        className="p-2 rounded-lg text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Edit">
-                        <FaEdit />
-                      </button>
-                      <button onClick={() => handleDelete(msg.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
-                        <FaTrash />
-                      </button>
-                      {msg.message_body && (
-                        <button onClick={() => setExpandedId(expandedId === msg.id ? null : msg.id)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors" title="Toggle message body">
-                          {expandedId === msg.id ? <FaChevronUp /> : <FaChevronDown />}
-                        </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Expandable message body */}
-                  {expandedId === msg.id && msg.message_body && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Message</p>
-                      <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                        {msg.message_body}
-                      </pre>
-                      {msg.notes && (
-                        <div className="mt-3">
-                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Notes</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{msg.notes}</p>
-                        </div>
-                      )}
+                  {/* Date and Subject */}
+                  <div className="space-y-2 mb-4 flex-1">
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/30 px-2.5 py-1.5 rounded-lg w-fit">
+                      <FaClock className="text-xs flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium">Sent: {formatDate(msg.sent_date)}</span>
                     </div>
-                  )}
+
+                    {msg.subject && (
+                      <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mt-2">
+                        <span className="font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider block mb-0.5">Subject</span>
+                        {msg.subject}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100/50 dark:border-gray-700/50 mt-2" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => setSelectedMsg(msg)}
+                    className="flex-1 flex items-center justify-center gap-1.5 btn-secondary text-sm" title="View details">
+                    <FaEye className="text-blue-500" /> View
+                  </button>
+                  <button onClick={() => { setEditingMsg(msg); setShowForm(true); }}
+                    className="flex items-center justify-center gap-1.5 btn-secondary text-sm px-3" title="Edit">
+                    <FaEdit className="text-indigo-500" />
+                  </button>
+                  <button onClick={() => handleDelete(msg.id)}
+                    className="flex items-center justify-center gap-1.5 btn-secondary text-sm px-3 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800" title="Delete">
+                    <FaTrash className="text-red-500" />
+                  </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedMsg && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedMsg(null)}>
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-6 flex justify-between items-start z-10">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{selectedMsg.contact_name}</h2>
+                <div className="flex items-center gap-3 mb-1">
+                  {selectedMsg.company_name && (
+                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <FaBuilding />
+                      <span className="font-medium">{selectedMsg.company_name}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedMsg(null)}
+                className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Status and Badges */}
+              <div className="flex flex-wrap gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium ${getViaBadgeColor(selectedMsg.via)}`}>
+                  {getViaIcon(selectedMsg.via)} {selectedMsg.via}
+                </span>
+                {selectedMsg.category && (
+                  <span className={`px-3 py-1.5 rounded-full font-medium ${getCategoryBadgeColor(selectedMsg.category)}`}>
+                    {selectedMsg.category}
+                  </span>
+                )}
+                {selectedMsg.got_reply && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 font-semibold border border-green-200 dark:border-green-800">
+                    <FaReply /> Replied
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 font-medium border border-gray-200 dark:border-slate-600">
+                  <FaClock /> Sent: {formatDate(selectedMsg.sent_date)}
+                </span>
+              </div>
+
+              {/* Linked Connection */}
+              {selectedMsg.connection_id && connMap[selectedMsg.connection_id] && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Linked Connection</h3>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                      <FaUserPlus />
+                      <span className="font-medium">{connMap[selectedMsg.connection_id].contact_name}</span>
+                    </div>
+                    {connMap[selectedMsg.connection_id].linkedin_profile_id && (
+                      <a href={connMap[selectedMsg.connection_id].linkedin_profile_id} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                        <FaLinkedin /> View Profile
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Info */}
+              {(selectedMsg.contact_email || selectedMsg.contact_linkedin) && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Contact Info</h3>
+                  <div className="flex flex-col gap-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    {selectedMsg.contact_email && (
+                      <div className="flex items-center gap-2">
+                        <FaEnvelope className="text-gray-400" />
+                        <a href={`mailto:${selectedMsg.contact_email}`} className="text-blue-600 hover:underline text-sm">{selectedMsg.contact_email}</a>
+                      </div>
+                    )}
+                    {selectedMsg.contact_linkedin && (
+                      <div className="flex items-center gap-2">
+                        <FaLinkedin className="text-gray-400" />
+                        <a href={selectedMsg.contact_linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">LinkedIn Profile</a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Details */}
+              {selectedMsg.subject && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Subject</h3>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-800 dark:text-gray-200 font-medium">
+                    {selectedMsg.subject}
+                  </div>
+                </div>
+              )}
+
+              {selectedMsg.message_body && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Message Body</h3>
+                  <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 rounded-lg p-4 max-h-80 overflow-y-auto">
+                    {selectedMsg.message_body}
+                  </pre>
+                </div>
+              )}
+
+              {/* Notes */}
+              {selectedMsg.notes && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Notes</h3>
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900/50 rounded-lg">
+                    <p className="text-sm text-yellow-900 dark:text-yellow-200 whitespace-pre-wrap">{selectedMsg.notes}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 dark:border-slate-700 p-4 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-slate-800 rounded-b-xl">
+              <button onClick={() => { setSelectedMsg(null); setEditingMsg(selectedMsg); setShowForm(true); }}
+                className="px-4 py-2 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors font-medium">
+                <FaEdit /> Edit
+              </button>
+              <button onClick={() => setSelectedMsg(null)}
+                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors font-medium">
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
